@@ -106,9 +106,9 @@ export default function Upload() {
     <Layout>
       <div className="p-6 space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Upload Content</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Upload Banner</h1>
           <p className="text-muted-foreground">
-            Upload videos, PDFs, images, and other educational materials.
+            Upload Banner videos.
           </p>
         </div>
 
@@ -117,7 +117,7 @@ export default function Upload() {
             <CardHeader>
               <CardTitle>File Upload</CardTitle>
               <CardDescription>
-                Drag and drop files or click to browse. Supports videos (MP4, MOV), PDFs, and images.
+                Drag and drop files or click to browse. Supports videos (MP4, MOV) and images.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -179,7 +179,7 @@ export default function Upload() {
             <CardHeader>
               <CardTitle>Content Details</CardTitle>
               <CardDescription>
-                Add titles, descriptions, and categorize your content.
+                Add titles, descriptions, and your content.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -204,23 +204,7 @@ export default function Upload() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <select
-                  id="category"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  value={metadata.category}
-                  onChange={(e) => setMetadata(prev => ({ ...prev, category: e.target.value }))}
-                >
-                  <option value="">Select category</option>
-                  <option value="course-videos">Course Videos</option>
-                  <option value="tutorials">Tutorials</option>
-                  <option value="lookbooks">Lookbooks</option>
-                  <option value="patterns">Patterns</option>
-                  <option value="inspiration">Inspiration</option>
-                  <option value="testimonials">Testimonials</option>
-                </select>
-              </div>
+            
 
               <div className="space-y-2">
                 <Label htmlFor="tags">Tags</Label>

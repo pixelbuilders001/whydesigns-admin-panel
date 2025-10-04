@@ -64,7 +64,7 @@ export default function Dashboard() {
             Welcome back! Here's an overview of your fashion education platform.
           </p>
         </div>
-        <Button>Upload New Content</Button>
+        {/* <Button>Upload New Content</Button> */}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -74,7 +74,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
+        {/* <Card className="col-span-4">
           <CardHeader>
             <CardTitle>Recent Activity</CardTitle>
             <CardDescription>
@@ -99,9 +99,9 @@ export default function Dashboard() {
               ))}
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
-        <Card className="col-span-3">
+        {/* <Card className="col-span-3">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
             <CardDescription>
@@ -126,7 +126,7 @@ export default function Dashboard() {
               Add Testimonial
             </Button>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </div>
   );

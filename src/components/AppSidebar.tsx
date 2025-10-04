@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Upload,
@@ -8,20 +8,29 @@ import {
   Image,
   Film,
   MessageSquare,
+  Users,
   Settings,
   Menu,
   X,
+  LogOut,
+  BookOpen,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Upload", href: "/upload", icon: Upload },
+  { name: "Users", href: "/users", icon: Users },
+  { name: "Banner", href: "/upload", icon: Upload },
   { name: "Course Videos", href: "/videos", icon: Video },
   { name: "PDF Materials", href: "/pdfs", icon: FileText },
   { name: "Images", href: "/images", icon: Image },
   { name: "Reels", href: "/reels", icon: Film },
+  { name: "Blogs", href: "/blogs", icon: BookOpen },
+  { name: "Meetings", href: "/meetings", icon: Calendar },
+  { name: "Counselors", href: "/counselors", icon: Settings },
   { name: "Testimonials", href: "/testimonials", icon: MessageSquare },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
@@ -29,6 +38,13 @@ const navigation = [
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <div
@@ -73,6 +89,20 @@ export function AppSidebar() {
           );
         })}
       </nav>
+
+      <div className="px-2 py-4 border-t">
+        <Button
+          variant="ghost"
+          className={cn(
+            "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            collapsed ? "px-3" : "px-3"
+          )}
+          onClick={handleLogout}
+        >
+          <LogOut size={20} />
+          {!collapsed && <span className="ml-3">Logout</span>}
+        </Button>
+      </div>
     </div>
   );
 }
