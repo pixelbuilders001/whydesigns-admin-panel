@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, useUser } from "@/contexts/AuthContext";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -31,8 +31,8 @@ const navigation = [
   { name: "Blogs", href: "/blogs", icon: BookOpen },
   { name: "Meetings", href: "/meetings", icon: Calendar },
   { name: "Counselors", href: "/counselors", icon: Settings },
-  { name: "Testimonials", href: "/testimonials", icon: MessageSquare },
-  { name: "Settings", href: "/settings", icon: Settings },
+  // { name: "Testimonials", href: "/testimonials", icon: MessageSquare },
+  // { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -40,6 +40,7 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { userName, userEmail, isAuthenticated } = useUser();
 
   const handleLogout = () => {
     logout();
@@ -91,6 +92,17 @@ export function AppSidebar() {
       </nav>
 
       <div className="px-2 py-4 border-t">
+        {isAuthenticated && !collapsed && (
+          <div className="mb-3 p-3 bg-sidebar-accent rounded-md">
+            <div className="text-sm font-medium text-sidebar-foreground">
+              {userName || "User"}
+            </div>
+            <div className="text-xs text-sidebar-foreground/70 truncate">
+              {userEmail}
+            </div>
+          </div>
+        )}
+
         <Button
           variant="ghost"
           className={cn(

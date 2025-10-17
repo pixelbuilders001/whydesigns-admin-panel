@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -8,15 +8,36 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, X } from "lucide-react";
+import { Plus, Edit, Trash2, X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiService } from "@/lib/api";
 
 interface Counselor {
+  _id: string;
+  fullName: string;
+  title: string;
+  yearsOfExperience: number;
+  bio: string;
+  avatarUrl?: string;
+  specialties: string[];
+  isActive: boolean;
+  rating: number;
+  createdAt: string;
+  updatedAt: string;
   id: number;
-  name: string;
-  designation: string;
-  experience: string;
-  tags: string[];
+  experienceLevel: string;
+}
+
+interface CounselorsResponse {
+  success: boolean;
+  message: string;
+  data: Counselor[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 const predefinedTags = [
@@ -27,59 +48,89 @@ const predefinedTags = [
   "Fashion Industry",
   "Portfolio Review",
   "Interview Prep",
-  "Skill Development"
-];
-
-const initialCounselors: Counselor[] = [
-  {
-    id: 1,
-    name: "Dr. Sarah Johnson",
-    designation: "Senior Career Counselor",
-    experience: "10 years",
-    tags: ["Career Guidance", "Fashion Industry", "Interview Prep", "Portfolio Review"]
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    designation: "Academic Advisor",
-    experience: "8 years",
-    tags: ["Academic Support", "Skill Development", "Personal Development", "Career Guidance"]
-  },
-  {
-    id: 3,
-    name: "Emily Rodriguez",
-    designation: "Wellness Counselor",
-    experience: "6 years",
-    tags: ["Mental Health", "Personal Development", "Academic Support", "Career Guidance"]
-  }
+  "Skill Development",
+  "Anxiety",
+  "Depression",
+  "CBT",
+  "Therapy",
+  "Counseling",
+  "Wellness"
 ];
 
 const Counselors = () => {
-  const [counselors, setCounselors] = useState<Counselor[]>(initialCounselors);
+  const [counselors, setCounselors] = useState<Counselor[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingCounselor, setEditingCounselor] = useState<Counselor | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCounselors, setTotalCounselors] = useState(0);
   const [formData, setFormData] = useState({
-    name: "",
-    designation: "",
-    experience: "",
-    tags: [] as string[]
+    fullName: "",
+    title: "",
+    yearsOfExperience: 0,
+    bio: "",
+    specialties: [] as string[],
+    avatarUrl: "",
+    rating: 0
   });
+  console.log("formdat-----",formData)
   const [customTag, setCustomTag] = useState("");
   const { toast } = useToast();
 
+  // Fetch counselors from API
+  const fetchCounselors = async (page: number = 1) => {
+    try {
+      setLoading(true);
+      // You'll need to add getCounselors method to your apiService
+      const response: CounselorsResponse = await apiService.getCounselors(page, 10);
+      
+      if (response.success) {
+        setCounselors(response.data);
+        setTotalPages(response.meta?.totalPages || 1);
+        setTotalCounselors(response.meta?.total || 0);
+        setCurrentPage(page);
+      }
+    } catch (error) {
+      console.error('Error fetching counselors:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch counselors",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCounselors();
+  }, []);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      fetchCounselors(newPage);
+    }
+  };
+
+
   const resetForm = () => {
     setFormData({
-      name: "",
-      designation: "",
-      experience: "",
-      tags: []
+      fullName: "",
+      title: "",
+      yearsOfExperience: 0,
+      bio: "",
+      specialties: [],
+      avatarUrl: "",
+      rating: 0
     });
     setCustomTag("");
   };
 
-  const handleAddCounselor = () => {
-    if (!formData.name || !formData.designation || !formData.experience) {
+  const handleAddCounselor = async () => {
+    if (!formData.fullName || !formData.title || !formData.yearsOfExperience) {
       toast({
         title: "Error",
         description: "Please fill in all required fields.",
@@ -88,88 +139,98 @@ const Counselors = () => {
       return;
     }
 
-    if (formData.tags.length < 4) {
+    if (formData.specialties.length < 3) {
       toast({
         title: "Error",
-        description: "Please select at least 4 tags.",
+        description: "Please select at least 3 specialties.",
         variant: "destructive",
       });
       return;
     }
 
-    const newCounselor: Counselor = {
-      id: Math.max(...counselors.map(c => c.id)) + 1,
-      name: formData.name,
-      designation: formData.designation,
-      experience: formData.experience,
-      tags: formData.tags
-    };
+    try {
+      setFormLoading(true);
 
-    setCounselors([...counselors, newCounselor]);
-    setIsAddDialogOpen(false);
-    resetForm();
-    toast({
-      title: "Success",
-      description: "Counselor added successfully!",
-    });
-  };
+      // Create FormData for file upload support
+      const formDataToSend = new FormData();
 
-  const handleEditCounselor = () => {
-    if (!formData.name || !formData.designation || !formData.experience || !editingCounselor) {
+      // Add all text fields to FormData
+      formDataToSend.append('fullName', formData.fullName);
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('yearsOfExperience', formData.yearsOfExperience.toString());
+      formDataToSend.append('bio', formData.bio || '');
+      formDataToSend.append('isActive', 'true');
+      formDataToSend.append('rating', formData.rating.toString());
+
+      // Handle specialties array
+      formData.specialties.forEach((specialty, index) => {
+        formDataToSend.append(`specialties[${index}]`, specialty);
+      });
+
+      // Handle file upload - send as 'avatar' field, not 'avatarUrl'
+      if (formData.avatarFile) {
+        formDataToSend.append('avatar', formData.avatarFile);
+      }
+
+      const response = await apiService.createCounselor(formDataToSend);
+
+      if (response.success) {
+        toast({
+          title: "Success",
+          description: response.message,
+        });
+        setIsAddDialogOpen(false);
+        resetForm();
+        fetchCounselors(currentPage); // Refresh the list
+      }
+    } catch (error) {
+      console.error('Error creating counselor:', error);
       toast({
         title: "Error",
-        description: "Please fill in all required fields.",
+        description: "Failed to create counselor",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setFormLoading(false);
     }
+  };
+  
 
-    if (formData.tags.length < 4) {
+  const handleDeleteCounselor = async (id: string) => {
+    try {
+      // You'll need to add deleteCounselor method to your apiService
+      const response = await apiService.deleteCounselor(id);
+
+      if (response.success) {
+        toast({
+          title: "Success",
+          description: response.message,
+        });
+        fetchCounselors(currentPage); // Refresh the current page
+      }
+    } catch (error) {
+      console.error('Error deleting counselor:', error);
       toast({
         title: "Error",
-        description: "Please select at least 4 tags.",
+        description: "Failed to delete counselor",
         variant: "destructive",
       });
-      return;
     }
-
-    const updatedCounselors = counselors.map(counselor =>
-      counselor.id === editingCounselor.id
-        ? {
-            ...counselor,
-            name: formData.name,
-            designation: formData.designation,
-            experience: formData.experience,
-            tags: formData.tags
-          }
-        : counselor
-    );
-
-    setCounselors(updatedCounselors);
-    setIsEditDialogOpen(false);
-    setEditingCounselor(null);
-    resetForm();
-    toast({
-      title: "Success",
-      description: "Counselor updated successfully!",
-    });
   };
+const handleOpenDeleteDialog = (counselor: Counselor) => {
 
-  const handleDeleteCounselor = (id: number) => {
-    setCounselors(counselors.filter(counselor => counselor.id !== id));
-    toast({
-      title: "Success",
-      description: "Counselor deleted successfully!",
-    });
-  };
 
+};
   const openEditDialog = (counselor: Counselor) => {
     setEditingCounselor(counselor);
     setFormData({
-      name: counselor.name,
-      designation: counselor.designation,
-      experience: counselor.experience,
-      tags: counselor.tags
+      fullName: counselor.fullName,
+      title: counselor.title,
+      yearsOfExperience: counselor.yearsOfExperience,
+      bio: counselor.bio,
+      specialties: counselor.specialties,
+      avatarUrl: counselor.avatarUrl || "",
+      rating: counselor.rating,
     });
     setIsEditDialogOpen(true);
   };
@@ -182,17 +243,17 @@ const Counselors = () => {
   const toggleTag = (tag: string) => {
     setFormData(prev => ({
       ...prev,
-      tags: prev.tags.includes(tag)
-        ? prev.tags.filter(t => t !== tag)
-        : [...prev.tags, tag]
+      specialties: prev.specialties.includes(tag)
+        ? prev.specialties.filter(t => t !== tag)
+        : [...prev.specialties, tag]
     }));
   };
 
   const addCustomTag = () => {
-    if (customTag.trim() && !formData.tags.includes(customTag.trim())) {
+    if (customTag.trim() && !formData.specialties.includes(customTag.trim())) {
       setFormData(prev => ({
         ...prev,
-        tags: [...prev.tags, customTag.trim()]
+        specialties: [...prev.specialties, customTag.trim()]
       }));
       setCustomTag("");
     }
@@ -201,34 +262,19 @@ const Counselors = () => {
   const removeTag = (tag: string) => {
     setFormData(prev => ({
       ...prev,
-      tags: prev.tags.filter(t => t !== tag)
+      specialties: prev.specialties.filter(t => t !== tag)
     }));
   };
 
   const renderTagsSection = () => (
     <>
       <div className="grid gap-2">
-        <Label>Tags (Select at least 4)</Label>
-        <div className="flex flex-wrap gap-2 mb-2">
-          {predefinedTags.map(tag => (
-            <Badge
-              key={tag}
-              variant={formData.tags.includes(tag) ? "default" : "outline"}
-              className="cursor-pointer"
-              onClick={() => toggleTag(tag)}
-            >
-              {tag}
-            </Badge>
-          ))}
-        </div>
-      </div>
-      <div className="grid gap-2">
-        <Label>Add Custom Tag</Label>
+        <Label>Add Specialties</Label>
         <div className="flex gap-2">
           <Input
             value={customTag}
             onChange={(e) => setCustomTag(e.target.value)}
-            placeholder="Enter custom tag"
+            placeholder="Type a specialty and press Enter"
             onKeyPress={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
@@ -242,13 +288,13 @@ const Counselors = () => {
         </div>
       </div>
       <div className="grid gap-2">
-        <Label>Selected Tags ({formData.tags.length})</Label>
+        <Label>Specialties ({formData.specialties.length})</Label>
         <div className="flex flex-wrap gap-2 p-3 border rounded-md min-h-[50px]">
-          {formData.tags.length === 0 ? (
-            <span className="text-sm text-muted-foreground">No tags selected</span>
+          {formData.specialties.length === 0 ? (
+            <span className="text-sm text-muted-foreground">No specialties added</span>
           ) : (
-            formData.tags.map(tag => (
-              <Badge key={tag} variant="secondary" className="gap-1">
+            formData.specialties.map((tag, index) => (
+              <Badge key={`${tag}-${index}`} variant="secondary" className="gap-1">
                 {tag}
                 <X
                   className="h-3 w-3 cursor-pointer"
@@ -262,12 +308,81 @@ const Counselors = () => {
     </>
   );
 
+
+  const handleEditCounselor = async () => {
+    if (!formData.fullName || !formData.title || !formData.yearsOfExperience || !editingCounselor) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.specialties.length < 3) {
+      toast({
+        title: "Error",
+        description: "Please select at least 3 specialties.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setFormLoading(true);
+
+      // Create FormData for update (similar to create)
+      const formDataToSend = new FormData();
+
+      // Add all text fields to FormData
+      formDataToSend.append('fullName', formData.fullName);
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('yearsOfExperience', formData.yearsOfExperience.toString());
+      formDataToSend.append('bio', formData.bio || '');
+      formDataToSend.append('isActive', 'true');
+      formDataToSend.append('rating', formData.rating.toString());
+
+      // Handle specialties array
+      formData.specialties.forEach((specialty, index) => {
+        formDataToSend.append(`specialties[${index}]`, specialty);
+      });
+
+      // Handle file upload - send as 'avatar' field, not 'avatarUrl'
+      if (formData.avatarFile) {
+        formDataToSend.append('avatar', formData.avatarFile);
+      }
+
+      const response = await apiService.updateCounselor(editingCounselor.id, formDataToSend);
+
+      if (response.success) {
+        toast({
+          title: "Success",
+          description: response.message,
+        });
+        setIsEditDialogOpen(false);
+        setEditingCounselor(null);
+        resetForm();
+        fetchCounselors(currentPage); // Refresh the current page
+      }
+    } catch (error) {
+      console.error('Error updating counselor:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update counselor",
+        variant: "destructive",
+      });
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+
   return (
     <Layout>
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Counselors</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Counselors ({totalCounselors})</h1>
             <p className="text-muted-foreground">
               Manage counselors and their expertise areas.
             </p>
@@ -275,6 +390,7 @@ const Counselors = () => {
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={openAddDialog}>
+
                 <Plus className="mr-2 h-4 w-4" />
                 Add Counselor
               </Button>
@@ -288,30 +404,62 @@ const Counselors = () => {
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="name">Name *</Label>
+                  <Label htmlFor="fullName">Full Name *</Label>
                   <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Enter counselor name"
+                    id="fullName"
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    placeholder="Enter counselor full name"
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="designation">Designation *</Label>
+                  <Label htmlFor="title">Title/Designation *</Label>
                   <Input
-                    id="designation"
-                    value={formData.designation}
-                    onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                    placeholder="Enter designation"
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Enter designation/title"
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="experience">Experience *</Label>
+                  <Label htmlFor="yearsOfExperience">Years of Experience *</Label>
                   <Input
-                    id="experience"
-                    value={formData.experience}
-                    onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
-                    placeholder="e.g., 5 years"
+                    id="yearsOfExperience"
+                    type="number"
+                    value={formData.yearsOfExperience}
+                    onChange={(e) => setFormData({ ...formData, yearsOfExperience: parseInt(e.target.value) })}
+                    placeholder="e.g., 5"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="bio">Bio</Label>
+                  <textarea
+                    id="bio"
+                    value={formData.bio}
+                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                    placeholder="Enter counselor bio"
+                    rows={1}
+                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="rating">Rating</Label>
+                  <Input
+                    id="rating"
+                    type="number"
+                    value={formData.rating}
+                    onChange={(e) => setFormData({ ...formData, rating: parseInt(e.target.value) })}
+                    placeholder="e.g., 4.5"
+                  />
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="avatarUrl">Avatar</Label>
+                  <Input
+                    id="avatarUrl"
+                    type="file"
+                    onChange={(e) => setFormData({ ...formData, avatarFile: e.target.files?.[0] || null })}
+                    placeholder="Select avatar image file"
                   />
                 </div>
                 {renderTagsSection()}
@@ -320,84 +468,146 @@ const Counselors = () => {
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleAddCounselor}>Add Counselor</Button>
+                <Button onClick={handleAddCounselor} disabled={formLoading}>
+                  {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Add Counselor
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
 
-        <Card>
-        
-       
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Designation</TableHead>
-                  <TableHead>Experience</TableHead>
-                  <TableHead>Tags</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {counselors.map((counselor) => (
-                  <TableRow key={counselor.id}>
-                    <TableCell className="font-medium">{counselor.name}</TableCell>
-                    <TableCell>{counselor.designation}</TableCell>
-                    <TableCell>{counselor.experience}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {counselor.tags.slice(0, 3).map(tag => (
-                          <Badge key={tag} variant="secondary" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                        {counselor.tags.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{counselor.tags.length - 3}
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditDialog(counselor)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the counselor "{counselor.name}".
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteCounselor(counselor.id)}>
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
+        {/* Loading state */}
+        {loading && (
+          <Card>
+            <CardContent className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin mr-2" />
+              <span>Loading counselors...</span>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Empty state */}
+        {!loading && counselors.length === 0 && (
+          <Card>
+            <CardContent className="flex items-center justify-center py-8">
+              <span>No counselors found. Add your first counselor!</span>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Counselors table */}
+        {!loading && counselors.length > 0 && (
+          <Card>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Experience</TableHead>
+                    <TableHead>Specialties</TableHead>
+                    <TableHead>Rating</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                </TableHeader>
+                <TableBody>
+                  {counselors.map((counselor) => (
+                    <TableRow key={counselor._id}>
+                      <TableCell className="font-medium">{counselor.fullName}</TableCell>
+                      <TableCell>{counselor.title}</TableCell>
+                      <TableCell>{counselor.yearsOfExperience} years</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {counselor.specialties.slice(0, 3).map(tag => (
+                            <Badge key={tag} variant="secondary" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                          {counselor.specialties.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{counselor.specialties.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <span className="text-sm font-medium">{counselor.rating}</span>
+                          <div className="text-yellow-500">★</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={counselor.isActive ? "default" : "secondary"}>
+                          {counselor.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openEditDialog(counselor)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete the counselor "{counselor.fullName}".
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteCounselor(counselor.id)}>
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage <= 1}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage >= totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -410,30 +620,62 @@ const Counselors = () => {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="edit-name">Name *</Label>
+                <Label htmlFor="edit-fullName">Full Name *</Label>
                 <Input
-                  id="edit-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Enter counselor name"
+                  id="edit-fullName"
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  placeholder="Enter counselor full name"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-designation">Designation *</Label>
+                <Label htmlFor="edit-title">Title/Designation *</Label>
                 <Input
-                  id="edit-designation"
-                  value={formData.designation}
-                  onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                  placeholder="Enter designation"
+                  id="edit-title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Enter designation/title"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-experience">Experience *</Label>
+                <Label htmlFor="edit-yearsOfExperience">Years of Experience *</Label>
                 <Input
-                  id="edit-experience"
-                  value={formData.experience}
-                  onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
-                  placeholder="e.g., 5 years"
+                  id="edit-yearsOfExperience"
+                  type="number"
+                  value={formData.yearsOfExperience}
+                  onChange={(e) => setFormData({ ...formData, yearsOfExperience: parseInt(e.target.value) || 0 })}
+                  placeholder="e.g., 5"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-bio">Bio</Label>
+                <textarea
+                  id="edit-bio"
+                  value={formData.bio}
+                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                  placeholder="Enter counselor bio"
+                  rows={3}
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-rating">Rating</Label>
+                <Input
+                  id="edit-rating"
+                  type="number"
+                  step="0.1"
+                  value={formData.rating}
+                  onChange={(e) => setFormData({ ...formData, rating: parseFloat(e.target.value)  })}
+                  placeholder="e.g., 4.5"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-avatarFile">Avatar</Label>
+                <Input
+                  id="edit-avatarFile"
+                  type="file"
+                  onChange={(e) => setFormData({ ...formData, avatarFile: e.target.files?.[0] || null })}
+                  placeholder="Select avatar image file"
                 />
               </div>
               {renderTagsSection()}
@@ -442,7 +684,10 @@ const Counselors = () => {
               <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleEditCounselor}>Update Counselor</Button>
+              <Button onClick={handleEditCounselor} disabled={formLoading}>
+                {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Update Counselor
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -452,4 +697,3 @@ const Counselors = () => {
 };
 
 export default Counselors;
-
