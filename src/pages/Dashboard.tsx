@@ -42,13 +42,13 @@ export default function Dashboard() {
       trend: { value: 18, label: "from last month" },
     },
     {
-      title: "Students",
+      title: "Users",
       value: 142,
       icon: Users,
       trend: { value: 15, label: "from last month" },
     },
     {
-      title: "Engagement",
+      title: "Pending Meetings",
       value: "94%",
       icon: TrendingUp,
       trend: { value: 3, label: "from last month" },

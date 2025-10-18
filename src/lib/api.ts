@@ -269,6 +269,57 @@ export interface DeleteCounselorResponse {
   success: boolean;
   message: string;
 }
+
+export interface PDFMaterial {
+  _id: string;
+  name: string;
+  description: string;
+  fileUrl: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  category: string;
+  tags: string[];
+  uploadedBy: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  downloadCount: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PDFResponse {
+  success: boolean;
+  message: string;
+  data: PDFMaterial[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface CreatePDFResponse {
+  success: boolean;
+  message: string;
+  data: PDFMaterial;
+}
+
+export interface UpdatePDFResponse {
+  success: boolean;
+  message: string;
+  data: PDFMaterial;
+}
+
+export interface DeletePDFResponse {
+  success: boolean;
+  message: string;
+}
+
 class ApiService {
   private baseURL: string;
   private token: string | null = null;
@@ -619,7 +670,86 @@ async confirmBooking(id: string, meetingLink: string): Promise<UpdateBookingResp
   }
 }
 
-  
+async getMaterials(page: number = 1, limit: number = 10): Promise<PDFResponse> {
+  const url = `${this.baseURL}/api/v1/materials?page=${page}&limit=${limit}`;
+
+  const config: RequestInit = {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
+}
+
+async createMaterial(formData: FormData): Promise<CreatePDFResponse> {
+  const url = `${this.baseURL}/api/v1/materials`;
+
+  const config: RequestInit = {
+    method: 'POST',
+    headers: {
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+    body: formData,
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
+}
+
+async deactivateMaterial(id: string): Promise<ApiResponse<PDFMaterial>> {
+  const url = `${this.baseURL}/api/v1/materials/${id}/deactivate`;
+
+  const config: RequestInit = {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
+}
+
+
+
   async getHealth() {
     return this.request('/health');
   }
@@ -627,5 +757,5 @@ async confirmBooking(id: string, meetingLink: string): Promise<UpdateBookingResp
 
 // Create and export a singleton instance
 export const apiService = new ApiService(API_BASE_URL);
-export type { LoginRequest,UsersResponse, LoginResponse, RefreshTokenRequest, RefreshTokenResponse,UpdateBlogResponse };
+export type { LoginRequest,UsersResponse, LoginResponse, RefreshTokenRequest, RefreshTokenResponse,UpdateBlogResponse, PDFMaterial, PDFResponse, CreatePDFResponse, UpdatePDFResponse, DeletePDFResponse, CreateBlogResponse };
 export default apiService;
