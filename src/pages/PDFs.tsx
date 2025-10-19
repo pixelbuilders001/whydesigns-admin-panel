@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Search, Plus, Edit, Trash2, Download, Eye, Upload, Loader2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import { apiService } from "@/lib/api";
 
@@ -131,6 +132,10 @@ export default function PDFs() {
   const [totalPDFs, setTotalPDFs] = useState(0);
   const { toast } = useToast();
 
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [pdfIdToDelete, setPdfIdToDelete] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState("all");
+
   // Form state for add/edit
   const [formData, setFormData] = useState<CreatePDFRequest>({
     name: "",
@@ -144,8 +149,23 @@ export default function PDFs() {
   const fetchPDFs = async (page: number = 1) => {
     try {
       setLoading(true);
-      const response: PDFResponse = await apiService.getMaterials(page, 10);
-      
+
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      queryParams.append('page', String(page));
+      queryParams.append('limit', String(6));
+      if (searchTerm) {
+        queryParams.append('name', searchTerm);  // Assuming the API uses 'name' for name-based search
+      }
+      if (selectedCategory !== "all") {
+        queryParams.append('category', selectedCategory);
+      }
+      if (selectedStatus !== "all") {
+        queryParams.append('isActive', String(selectedStatus === "active")); //API expects boolean
+      }
+
+      const response: PDFResponse = await apiService.getMaterials(queryParams.toString());
+
       if (response.success) {
         setPdfs(response.data);
         setTotalPages(response.meta.totalPages);
@@ -166,20 +186,15 @@ export default function PDFs() {
 
   useEffect(() => {
     fetchPDFs();
-  }, []);
+  }, [searchTerm, selectedCategory, selectedStatus]); // Refetch when these change
 
   const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      fetchPDFs(newPage);
-    }
+      setCurrentPage(newPage); // Update current page
   };
 
-  const filteredPDFs = pdfs.filter(pdf => {
-    const matchesSearch = pdf.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         pdf.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || pdf.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  useEffect(() => {
+    fetchPDFs(currentPage);
+  },[currentPage])
 
   // Handler functions
   const handleAddPDF = () => {
@@ -205,24 +220,37 @@ export default function PDFs() {
     setIsEditModalOpen(true);
   };
 
-  const handleDeletePDF = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this PDF?")) {
+  const handleDeletePDF = (id: string) => {
+    setPdfIdToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeletePDF = async () => {
+    if (pdfIdToDelete) {
       try {
-        await apiService.deleteMaterial(id);
+        await apiService.deleteMaterial(pdfIdToDelete);
         toast({
           title: "Success",
           description: "PDF deleted successfully",
         });
         fetchPDFs(currentPage);
       } catch (error) {
-        console.error('Error deleting PDF:', error);
+        console.error("Error deleting PDF:", error);
         toast({
           title: "Error",
           description: "Failed to delete PDF",
           variant: "destructive",
         });
+      } finally {
+        setIsDeleteModalOpen(false);
+        setPdfIdToDelete(null);
       }
     }
+  };
+
+  const cancelDeletePDF = () => {
+    setIsDeleteModalOpen(false);
+    setPdfIdToDelete(null);
   };
 
   const handleSubmitAdd = async (e: React.FormEvent) => {
@@ -370,7 +398,7 @@ export default function PDFs() {
         });
       } else {
         // PDF is currently inactive, so activate it
-        await apiService.deactivateMaterial(id);
+        await apiService.activateMaterial(id);
         toast({
           title: "Success",
           description: "PDF activated successfully",
@@ -481,15 +509,15 @@ export default function PDFs() {
         {/* Search and Filter Controls */}
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
           <div className="flex flex-1 items-center space-x-2">
-            <div className="relative flex-1 max-w-sm">
+            {/* <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search PDFs..."
+                placeholder="Search PDFs by name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-8"
               />
-            </div>
+            </div> */}
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by category" />
@@ -501,8 +529,18 @@ export default function PDFs() {
                 <SelectItem value="Lookbooks">Lookbooks</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+      </div>
 
         {/* PDFs Table */}
         <Card>
@@ -523,14 +561,7 @@ export default function PDFs() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPDFs.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
-                      No PDFs found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredPDFs.map((pdf) => (
+                {pdfs.map((pdf) => (
                     <TableRow key={pdf._id}>
                       <TableCell className="font-medium">{pdf.name}</TableCell>
                       <TableCell className="max-w-xs truncate">{pdf.description}</TableCell>
@@ -549,7 +580,7 @@ export default function PDFs() {
                       </TableCell>
                       <TableCell>{new Date(pdf.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-center">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -566,6 +597,7 @@ export default function PDFs() {
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
+                       
                           <Button
                             variant="ghost"
                             size="icon"
@@ -574,11 +606,15 @@ export default function PDFs() {
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
+                             <Switch
+                            checked={pdf.isActive}
+                             onCheckedChange={(checked) => handleTogglePDF(pdf._id, checked)}
+                            title={pdf.isActive ? "Deactivate PDF" : "Activate PDF"}
+                          />
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
+                  ))}
               </TableBody>
             </Table>
 
@@ -686,6 +722,26 @@ export default function PDFs() {
             </form>
           </DialogContent>
         </Dialog>
+         {/* Delete Confirmation Modal */}
+         <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Delete Confirmation</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this PDF? This action cannot be
+              undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={cancelDeletePDF}>
+              Cancel
+            </Button>
+            <Button type="button" variant="destructive" onClick={confirmDeletePDF}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </div>
     </Layout>
   );

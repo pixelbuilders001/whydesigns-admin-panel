@@ -670,8 +670,33 @@ async confirmBooking(id: string, meetingLink: string): Promise<UpdateBookingResp
   }
 }
 
-async getMaterials(page: number = 1, limit: number = 10): Promise<PDFResponse> {
-  const url = `${this.baseURL}/api/v1/materials?page=${page}&limit=${limit}`;
+// async getMaterials(page: number = 1, limit: number = 10): Promise<PDFResponse> {
+//   const url = `${this.baseURL}/api/v1/materials?page=${page}&limit=${limit}`;
+
+//   const config: RequestInit = {
+//     method: 'GET',
+//     headers: {
+//       'Content-Type': 'application/json',
+//       ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+//     },
+//   };
+
+//   try {
+//     const response = await fetch(url, config);
+//     const data = await response.json();
+
+//     if (!response.ok) {
+//       throw new Error(data.message || `HTTP error! status: ${response.status}`);
+//     }
+
+//     return data;
+//   } catch (error) {
+//     console.error('API request failed:', error);
+//     throw error;
+//   }
+// }
+async getMaterials(queryParams: string): Promise<PDFResponse> {
+  const url = `${this.baseURL}/api/v1/materials?${queryParams}`;
 
   const config: RequestInit = {
     method: 'GET',
@@ -695,7 +720,6 @@ async getMaterials(page: number = 1, limit: number = 10): Promise<PDFResponse> {
     throw error;
   }
 }
-
 async createMaterial(formData: FormData): Promise<CreatePDFResponse> {
   const url = `${this.baseURL}/api/v1/materials`;
 
@@ -721,7 +745,58 @@ async createMaterial(formData: FormData): Promise<CreatePDFResponse> {
     throw error;
   }
 }
+async updateMaterial(id: string, materialData: any): Promise<UpdatePDFResponse> {
+    const url = `${this.baseURL}/api/v1/materials/${id}`;
 
+    const config: RequestInit = {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+        },
+        body: JSON.stringify(materialData),
+    };
+
+    try {
+        const response = await fetch(url, config);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+
+        return data;
+    } catch (error) {
+        console.error('API request failed:', error);
+        throw error;
+    }
+}
+
+async deleteMaterial(id: string): Promise<DeletePDFResponse> {
+    const url = `${this.baseURL}/api/v1/materials/${id}`;
+
+    const config: RequestInit = {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+        },
+    };
+
+    try {
+        const response = await fetch(url, config);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+
+        return data;
+    } catch (error) {
+        console.error('API request failed:', error);
+        throw error;
+    }
+}
 async deactivateMaterial(id: string): Promise<ApiResponse<PDFMaterial>> {
   const url = `${this.baseURL}/api/v1/materials/${id}/deactivate`;
 
