@@ -69,7 +69,7 @@ const Users = () => {
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Users</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Users ({totalUsers})</h1>
             <p className="text-muted-foreground">
               Manage and view all registered users.
             </p>
@@ -83,12 +83,7 @@ const Users = () => {
         )}
 
         <Card>
-          <CardHeader>
-            <CardTitle>Users ({totalUsers})</CardTitle>
-            <CardDescription>
-              A list of all registered users in the system.
-            </CardDescription>
-          </CardHeader>
+      
           <CardContent>
             <Table>
               <TableHeader>

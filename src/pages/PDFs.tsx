@@ -388,6 +388,7 @@ export default function PDFs() {
   }
 
   const handleTogglePDF = async (id: string, currentStatus: boolean) => {
+    console.log("stsus---",id,currentStatus)
     try {
       if (currentStatus) {
         // PDF is currently active, so deactivate it
@@ -608,7 +609,7 @@ export default function PDFs() {
                           </Button>
                              <Switch
                             checked={pdf.isActive}
-                             onCheckedChange={(checked) => handleTogglePDF(pdf._id, checked)}
+                             onCheckedChange={(checked) => handleTogglePDF(pdf.id, pdf.isActive)}
                             title={pdf.isActive ? "Deactivate PDF" : "Activate PDF"}
                           />
                         </div>

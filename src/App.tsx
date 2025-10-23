@@ -18,6 +18,7 @@ import NotFound from "./pages/NotFound";
 import Users from "./pages/Users";
 import Counselors from "./pages/Counselors";
 import Meetings from "./pages/Meetings";
+import ChangePassword from "./pages/ChangePassword";
 
 const queryClient = new QueryClient();
 
@@ -138,6 +139,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Settings />
+                </ProtectedRoute>
+              }
+            />
+              <Route
+              path="/change-password"
+              element={
+                <ProtectedRoute>
+                  <ChangePassword/>
                 </ProtectedRoute>
               }
             />

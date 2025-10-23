@@ -320,6 +320,133 @@ export interface DeletePDFResponse {
   message: string;
 }
 
+
+interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+interface ChangePasswordResponse {
+  success: boolean;
+  message: string;
+  data: {};
+}
+
+export interface Reel {
+  _id: string;
+  title: string;
+  description: string;
+  videoUrl: string;
+  duration: number;
+  fileSize: number;
+  uploadedBy: string;
+  tags: string[];
+  category: string;
+  viewCount: number;
+  likeCount: number;
+  isPublished: boolean;
+  isActive: boolean;
+  displayOrder: number;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  fileSizeFormatted: string;
+  durationFormatted: string;
+  id: string;
+}
+
+export interface CreateReelRequest {
+  title: string;
+  description: string;
+  video: File;
+  tags: string[];
+  duration: number;
+  fileSize: number;
+  category?: string;
+}
+
+export interface CreateReelResponse {
+  success: boolean;
+  message: string;
+  data: Reel;
+}
+
+export interface ReelsResponse {
+  success: boolean;
+  message: string;
+  data: Reel[];
+  meta?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface SocialMedia {
+  facebook: string;
+  instagram: string;
+  twitter: string;
+  linkedin: string;
+}
+
+export interface CreateTestimonialRequest {
+  name: string;
+  email: string;
+  city: string;
+  state: string;
+  country: string;
+  rating: number;
+  message: string;
+  designation: string;
+  company: string;
+  profileImage: string;
+  socialMedia: SocialMedia;
+}
+
+export interface Testimonial {
+  _id: string;
+  userId: string;
+  name: string;
+  email: string;
+  city: string;
+  state: string;
+  country: string;
+  rating: number;
+  message: string;
+  designation: string;
+  company: string;
+  profileImage: string;
+  isFavorite: boolean;
+  isApproved: boolean;
+  isActive: boolean;
+  socialMedia: SocialMedia;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  fullLocation: string;
+}
+
+export interface CreateTestimonialResponse {
+  success: boolean;
+  message: string;
+  data: Testimonial;
+}
+
+export interface TestimonialResponse {
+  success: boolean;
+  message: string;
+  data: Testimonial[];
+  meta?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+
 class ApiService {
   private baseURL: string;
   private token: string | null = null;
@@ -822,7 +949,280 @@ async deactivateMaterial(id: string): Promise<ApiResponse<PDFMaterial>> {
     throw error;
   }
 }
+  async changePassword(credentials: ChangePasswordRequest): Promise<ChangePasswordResponse> {
+    return this.request<ChangePasswordResponse>('/api/v1/users/change-password', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+  }
+async getReels(page: number,limit:number): Promise<ReelsResponse> {
+ 
+   const url = `${this.baseURL}/api/v1/reels/all/reels?page=${page}&limit=${limit}`;
 
+  const config: RequestInit = {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
+}
+
+async createReel(formData: FormData): Promise<CreateReelResponse> {
+  const url = `${this.baseURL}/api/v1/reels`;
+
+  const config: RequestInit = {
+    method: 'POST',
+    headers: {
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+    body: formData,
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
+}
+
+async updateReel(id: string, formData: FormData): Promise<CreateReelResponse> {
+  const url = `${this.baseURL}/api/v1/reels/${id}`;
+
+  const config: RequestInit = {
+    method: 'PATCH',
+    headers: {
+      // Don’t manually set Content-Type for FormData
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+    body: formData,
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error updating reel:', error);
+    throw error;
+  }
+}
+
+async deleteReel(id: string): Promise<{ success: boolean; message: string }> {
+  const url = `${this.baseURL}/api/v1/reels/${id}`;
+
+  const config: RequestInit = {
+    method: 'DELETE',
+    headers: {
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error deleting reel:', error);
+    throw error;
+  }
+}
+
+
+async publishReel(id: string): Promise<{ success: boolean; message: string }> {
+  const url = `${this.baseURL}/api/v1/reels/${id}/publish`;
+
+  const config: RequestInit = {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error publishing reel:', error);
+    throw error;
+  }
+}
+
+async unpublishReel(id: string): Promise<{ success: boolean; message: string }> {
+  const url = `${this.baseURL}/api/v1/reels/${id}/unpublish`;
+
+  const config: RequestInit = {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error unpublishing reel:', error);
+    throw error;
+  }
+}
+
+
+// Create Testimonial
+async createTestimonial(payload: CreateTestimonialRequest): Promise<CreateTestimonialResponse> {
+  const url = `${this.baseURL}/api/v1/testimonials`;
+
+  const config: RequestInit = {
+    method: 'POST',
+    headers: {
+      // 'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+    body: payload,
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
+}
+
+// Get Testimonials
+async getTestimonials(page: number = 1, limit: number = 2): Promise<TestimonialResponse> {
+  
+      const url = `${this.baseURL}/api/v1/testimonials?page=${page}&limit=${limit}`;
+
+  const config: RequestInit = {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
+}
+
+// Update Testimonial
+async updateTestimonial(id: string, payload: Partial<CreateTestimonialRequest>): Promise<CreateTestimonialResponse> {
+  const url = `${this.baseURL}/api/v1/testimonials/${id}`;
+
+  const config: RequestInit = {
+    method: 'PATCH',
+    headers: {
+      // 'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+    body: payload,
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
+}
+
+// Delete Testimonial
+async deleteTestimonial(id: string): Promise<{ success: boolean; message: string }> {
+  const url = `${this.baseURL}/api/v1/testimonials/${id}`;
+
+  const config: RequestInit = {
+    method: 'DELETE',
+    headers: {
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
+}
 
 
   async getHealth() {

@@ -21,33 +21,90 @@ import {
   Key,
   Download
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+// import { Button } from "@/components/ui/button";
+// import { Input } from "@/components/ui/input";
+// import { Label } from "@/components/ui/label";
+// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/components/ui/use-toast";
+import { apiService } from "@/lib/api";
 
 export default function Settings() {
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordMessage, setPasswordMessage] = useState("");
+  const [formData, setFormData] = useState<ChangePasswordForm>({});
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleChangePassword = () => {
-    if (currentPassword !== "password") {
-      setPasswordMessage("Current password is incorrect");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordMessage("New passwords do not match");
-      return;
-    }
-    if (newPassword.length < 6) {
-      setPasswordMessage("New password must be at least 6 characters");
-      return;
-    }
-    // Dummy change - in real app, this would call an API
-    setPasswordMessage("Password changed successfully!");
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.newPassword !== formData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "New password and confirm password do not match.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await apiService.changePassword({
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+        confirmPassword: formData.confirmPassword,
+      });
+
+      if (response.success) {
+        toast({
+          title: "Success",
+          description: "Password changed successfully. You will be redirected to the login page.",
+        });
+
+        // Logout user
+    clearAuthData();
+
+        // Redirect to login page after a delay
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+      } else {
+        toast({
+          title: "Error",
+          description: response.message || "Failed to change password.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  const clearAuthData = () => {
+    localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("userToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userData");
+
+  };
   return (
     <Layout>
       <div className="p-6 space-y-6">
@@ -80,48 +137,45 @@ export default function Settings() {
                 <div className="space-y-2">
                   <Label htmlFor="currentPassword">Current Password</Label>
                   <Input
-                    id="currentPassword"
-                    type="password"
-                    placeholder="Enter current password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
+             type="password"
+              id="currentPassword"
+              name="currentPassword"
+              onChange={handleChange}
+              placeholder="Enter current password"
+              required
                   />
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="newPassword">New Password</Label>
                     <Input
-                      id="newPassword"
-                      type="password"
-                      placeholder="Enter new password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
+                   type="password"
+              id="newPassword"
+              name="newPassword"
+              onChange={handleChange}
+              placeholder="Enter new password"
+              required
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword">Confirm Password</Label>
                     <Input
-                      id="confirmPassword"
-                      type="password"
-                      placeholder="Confirm new password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              onChange={handleChange}
+              placeholder="Confirm new password"
+              required
                     />
                   </div>
                 </div>
-                {passwordMessage && (
+                {/* {passwordMessage && (
                   <Alert variant={passwordMessage.includes("successfully") ? "default" : "destructive"}>
                     <AlertDescription>{passwordMessage}</AlertDescription>
                   </Alert>
-                )}
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Two-Factor Authentication</Label>
-                    <p className="text-sm text-muted-foreground">Add an extra layer of security</p>
-                  </div>
-                  <Switch />
-                </div>
-                <Button onClick={handleChangePassword}>Update Security</Button>
+                )} */}
+             
+                <Button onClick={handleSubmit}>Change Password</Button>
               </CardContent>
             </Card>
           </div>

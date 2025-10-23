@@ -26,13 +26,13 @@ const navigation = [
   { name: "Banner", href: "/upload", icon: Upload },
   { name: "Course Videos", href: "/videos", icon: Video },
   { name: "PDF Materials", href: "/pdfs", icon: FileText },
-  { name: "Images", href: "/images", icon: Image },
+  // { name: "Images", href: "/images", icon: Image },
   { name: "Reels", href: "/reels", icon: Film },
   { name: "Blogs", href: "/blogs", icon: BookOpen },
   { name: "Meetings", href: "/meetings", icon: Calendar },
   { name: "Counselors", href: "/counselors", icon: Settings },
-  // { name: "Testimonials", href: "/testimonials", icon: MessageSquare },
-  // { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Testimonials", href: "/testimonials", icon: MessageSquare },
+  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -70,7 +70,7 @@ export function AppSidebar() {
         </Button>
       </div>
       
-      <nav className="px-2 py-4 space-y-1">
+      <nav className="px-2 py-4 space-y-1 overflow-y-auto max-h-[calc(100vh-200px)]">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href;
           return (
@@ -100,7 +100,9 @@ export function AppSidebar() {
             <div className="text-xs text-sidebar-foreground/70 truncate">
               {userEmail}
             </div>
+            
           </div>
+        
         )}
 
         <Button
