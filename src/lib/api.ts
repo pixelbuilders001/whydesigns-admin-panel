@@ -50,12 +50,12 @@ interface RefreshTokenResponse {
   };
 }
 
+
 interface ApiResponse<T> {
   success: boolean;
   message: string;
-  data?: T;
+  data: T;
 }
-
 export interface UsersResponse {
   success: boolean;
   message: string;
@@ -155,6 +155,7 @@ export interface CreateCounselorRequest {
   specialties: string[];
   isActive: boolean;
   rating: number;
+  email:string;
 }
 
 export interface CreateCounselorResponse {
@@ -338,6 +339,7 @@ export interface Reel {
   title: string;
   description: string;
   videoUrl: string;
+  thumbnailUrl: string;
   duration: number;
   fileSize: number;
   uploadedBy: string;
@@ -360,6 +362,7 @@ export interface CreateReelRequest {
   title: string;
   description: string;
   video: File;
+  thumbnail: File; 
   tags: string[];
   duration: number;
   fileSize: number;
@@ -445,7 +448,84 @@ export interface TestimonialResponse {
     totalPages: number;
   };
 }
+export interface Lead {
+  _id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  areaOfInterest: string;
+  message: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface DashboardResponse {
+  success: boolean;
+  message: string;
+  data: {
+    users: {
+      total: number;
+      active: number;
+      inactive: number;
+    };
+    blogs: {
+      total: number;
+      published: number;
+      draft: number;
+      totalViews: number;
+    };
+    testimonials: {
+      total: number;
+      approved: number;
+      pending: number;
+    };
+    reels: {
+      total: number;
+      published: number;
+      totalViews: number;
+      totalLikes: number;
+    };
+    videos: {
+      total: number;
+      published: number;
+      totalViews: number;
+      totalLikes: number;
+    };
+    leads: {
+      total: number;
+      active: number;
+    };
+    materials: {
+      total: number;
+      totalDownloads: number;
+    };
+    bookings: {
+      total: number;
+      confirmed: number;
+      pending: number;
+    };
+    counselors: {
+      total: number;
+      active: number;
+    };
+    categories: {
+      total: number;
+      active: number;
+    };
+    timestamp: string;
+  };
+}
 
+export interface LeadsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    leads: Lead[];
+    total: number;
+    page: number;
+    totalPages: number;
+  };
+}
 
 class ApiService {
   private baseURL: string;
@@ -957,7 +1037,7 @@ async deactivateMaterial(id: string): Promise<ApiResponse<PDFMaterial>> {
   }
 async getReels(page: number,limit:number): Promise<ReelsResponse> {
  
-   const url = `${this.baseURL}/api/v1/reels/all/reels?page=${page}&limit=${limit}`;
+   const url = `${this.baseURL}/api/v1/reels?page=${page}&limit=${limit}`;
 
   const config: RequestInit = {
     method: 'GET',
@@ -1224,13 +1304,350 @@ async deleteTestimonial(id: string): Promise<{ success: boolean; message: string
   }
 }
 
+async getLeads(page: number = 1, limit: number = 10): Promise<LeadsResponse> {
+  return this.request<LeadsResponse>(`/api/v1/leads?page=${page}&limit=${limit}`, {
+    method: 'GET',
+  });
+}
+
+async publishBlog(id: string): Promise<{ success: boolean; message: string }> {
+  const url = `${this.baseURL}/api/v1/blogs/${id}/publish`;
+
+  const config: RequestInit = {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error publishing blog:', error);
+    throw error;
+  }
+}
+
+async unpublishBlog(id: string): Promise<{ success: boolean; message: string }> {
+  const url = `${this.baseURL}/api/v1/blogs/${id}/unpublish`;
+
+  const config: RequestInit = {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error unpublishing blog:', error);
+    throw error;
+  }
+}
+
+
+async getDashboardSummary(): Promise<DashboardResponse> {
+  return this.request<DashboardResponse>('/api/v1/summary/dashboard', {
+    method: 'GET',
+  });
+}
+
+async createVideo(formData: FormData): Promise<CreateReelResponse> {
+  const url = `${this.baseURL}/api/v1/videos`;
+
+  const config: RequestInit = {
+    method: 'POST',
+    headers: {
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+    body: formData,
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
+}
+
+
+async getVideos(page: number,limit:number): Promise<ReelsResponse> {
+ 
+  const url = `${this.baseURL}/api/v1/videos/all/videos?page=${page}&limit=${limit}`;
+
+ const config: RequestInit = {
+   method: 'GET', 
+   headers: {
+     'Content-Type': 'application/json',
+     ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+   },
+ };
+
+ try {
+   const response = await fetch(url, config);
+   const data = await response.json();
+
+   if (!response.ok) {
+     throw new Error(data.message || `HTTP error! status: ${response.status}`);
+   }
+
+   return data;
+ } catch (error) {
+   console.error('API request failed:', error);
+   throw error;
+ }
+}
+
+
+
+async updateVideo(id: string, formData: FormData): Promise<CreateReelResponse> {
+ const url = `${this.baseURL}/api/v1/videos/${id}`;
+
+ const config: RequestInit = {
+   method: 'PATCH',
+   headers: {
+     // Don’t manually set Content-Type for FormData
+     ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+   },
+   body: formData,
+ };
+
+ try {
+   const response = await fetch(url, config);
+   const data = await response.json();
+
+   if (!response.ok) {
+     throw new Error(data.message || `HTTP error! status: ${response.status}`);
+   }
+
+   return data;
+ } catch (error) {
+   console.error('Error updating reel:', error);
+   throw error;
+ }
+}
+
+async deleteVideo(id: string): Promise<{ success: boolean; message: string }> {
+ const url = `${this.baseURL}/api/v1/videos/${id}`;
+
+ const config: RequestInit = {
+   method: 'DELETE',
+   headers: {
+     ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+   },
+ };
+
+ try {
+   const response = await fetch(url, config);
+   const data = await response.json();
+
+   if (!response.ok) {
+     throw new Error(data.message || `HTTP error! status: ${response.status}`);
+   }
+
+   return data;
+ } catch (error) {
+   console.error('Error deleting reel:', error);
+   throw error;
+ }
+}
+
+
+async publishVideo(id: string): Promise<{ success: boolean; message: string }> {
+ const url = `${this.baseURL}/api/v1/videos/${id}/publish`;
+
+ const config: RequestInit = {
+   method: 'PATCH',
+   headers: {
+     'Content-Type': 'application/json',
+     ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+   },
+ };
+
+ try {
+   const response = await fetch(url, config);
+   const data = await response.json();
+
+   if (!response.ok) {
+     throw new Error(data.message || `HTTP error! status: ${response.status}`);
+   }
+
+   return data;
+ } catch (error) {
+   console.error('Error publishing reel:', error);
+   throw error;
+ }
+}
+
+async unpublishVideo(id: string): Promise<{ success: boolean; message: string }> {
+ const url = `${this.baseURL}/api/v1/videos/${id}/unpublish`;
+
+ const config: RequestInit = {
+   method: 'PATCH',
+   headers: {
+     'Content-Type': 'application/json',
+     ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+   },
+ };
+
+ try {
+   const response = await fetch(url, config);
+   const data = await response.json();
+
+   if (!response.ok) {
+     throw new Error(data.message || `HTTP error! status: ${response.status}`);
+   }
+
+   return data;
+ } catch (error) {
+   console.error('Error unpublishing reel:', error);
+   throw error;
+ }
+}
+async publishTestimonial(id: string): Promise<{ success: boolean; message: string }> {
+  const url = `${this.baseURL}/api/v1/testimonials/${id}/publish`;
+ 
+  const config: RequestInit = {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+ 
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+ 
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+ 
+    return data;
+  } catch (error) {
+    console.error('Error publishing reel:', error);
+    throw error;
+  }
+ }
+ 
+ async unpublishTestimonial(id: string): Promise<{ success: boolean; message: string }> {
+  const url = `${this.baseURL}/api/v1/testimonials/${id}/unpublish`;
+ 
+  const config: RequestInit = {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+ 
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+ 
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+ 
+    return data;
+  } catch (error) {
+    console.error('Error unpublishing reel:', error);
+    throw error;
+  }
+ }
+
+ async publishCounselor(id: string): Promise<{ success: boolean; message: string }> {
+  const url = `${this.baseURL}/api/v1/counselors/${id}/publish`;
+ 
+  const config: RequestInit = {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+ 
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+ 
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+ 
+    return data;
+  } catch (error) {
+    console.error('Error publishing reel:', error);
+    throw error;
+  }
+ }
+ 
+ async unpublishCounselor(id: string): Promise<{ success: boolean; message: string }> {
+  const url = `${this.baseURL}/api/v1/counselors/${id}/unpublish`;
+ 
+  const config: RequestInit = {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+ 
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+ 
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+ 
+    return data;
+  } catch (error) {
+    console.error('Error unpublishing reel:', error);
+    throw error;
+  }
+ }
+
+
+
+
 
   async getHealth() {
     return this.request('/health');
   }
+
+
+ 
 }
+
+
 
 // Create and export a singleton instance
 export const apiService = new ApiService(API_BASE_URL);
-export type { LoginRequest,UsersResponse, LoginResponse, RefreshTokenRequest, RefreshTokenResponse,UpdateBlogResponse, PDFMaterial, PDFResponse, CreatePDFResponse, UpdatePDFResponse, DeletePDFResponse, CreateBlogResponse };
+export type { LoginRequest, UsersResponse, LoginResponse, RefreshTokenRequest, RefreshTokenResponse, UpdateBlogResponse, PDFMaterial, PDFResponse, CreatePDFResponse, UpdatePDFResponse, DeletePDFResponse, CreateBlogResponse,DashboardResponse };
 export default apiService;

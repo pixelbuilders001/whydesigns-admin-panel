@@ -51,6 +51,7 @@ interface TestimonialItem {
   isActive: boolean;
   hasVideo: boolean;
   profileImage?: string | File | null;
+  isPublished: boolean;
   socialMedia: {
     facebook: string;
     instagram: string;
@@ -93,7 +94,7 @@ export default function Testimonials() {
     content: "",
     rating: 5,
     company:"",
-    // course: "",
+    course: "",
     featured: false,
     hasVideo: false,
     profileImage: null,
@@ -125,6 +126,7 @@ console.log("tetetetete--",formData)
         featured: item.isFavorite,
         hasVideo: false,
         isActive: item.isActive,
+        isPublished: item.isPublished,
         socialMedia: {
           facebook: item.socialMedia?.facebook || "",
           instagram: item.socialMedia?.instagram || "",
@@ -283,6 +285,37 @@ payload.append("socialMedia.linkedin", formData.socialMedia.linkedin || "");
 };
 
 
+const handleTogglePublish = async (id: string, newStatus: boolean) => {
+  console.log("New publish status:", newStatus); // <-- now will be true/false correctly
+
+  try {
+    // Optimistically update UI
+    setTestimonials((prevTestimonials) =>
+      prevTestimonials.map((t) =>
+        t._id === id ? { ...t, isPublished: newStatus } : t
+      )
+    );
+
+    // Call appropriate API
+    if (newStatus) {
+      await apiService.publishTestimonial(id);
+      fetchTestimonials();
+    } else {
+      await apiService.unpublishTestimonial(id);
+      fetchTestimonials();
+    }
+  } catch (err) {
+    console.error("Error toggling publish:", err);
+
+    // Revert if failed
+    setTestimonials((prevTestimonials) =>
+      prevTestimonials.map((t) =>
+        t._id === id ? { ...t, isPublished: !newStatus } : t
+      )
+    );
+  }
+};
+
   return (
     <Layout>
       <div className="p-6 space-y-6">
@@ -337,7 +370,12 @@ payload.append("socialMedia.linkedin", formData.socialMedia.linkedin || "");
                     </div>
 
                     <div className="flex gap-1 items-center">
-                      <Switch checked={testimonial.isActive} />
+                    <Switch
+                    checked={Boolean(testimonial.isPublished)}
+                    onCheckedChange={(checked) =>
+                      handleTogglePublish(testimonial.id, checked)
+                    }
+                  />  
                       <Button size="sm" variant="outline" onClick={() => handleEditTestimonial(testimonial)}>
                         <Edit className="h-3 w-3" />
                       </Button>

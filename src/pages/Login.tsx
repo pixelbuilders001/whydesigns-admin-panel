@@ -30,7 +30,7 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-md">
-        <CardHeader>
+        <CardHeader className="flex flex-col items-center">
           <CardTitle>Admin Login</CardTitle>
           <CardDescription>
             Enter your credentials to access the admin panel.

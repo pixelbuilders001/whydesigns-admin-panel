@@ -11,6 +11,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, Edit, Trash2, X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiService } from "@/lib/api";
+import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 
 interface Counselor {
   _id: string;
@@ -21,11 +23,13 @@ interface Counselor {
   avatarUrl?: string;
   specialties: string[];
   isActive: boolean;
+  isPublished: boolean;
   rating: number;
   createdAt: string;
   updatedAt: string;
   id: number;
   experienceLevel: string;
+  email:string;
 }
 
 interface CounselorsResponse {
@@ -74,7 +78,10 @@ const Counselors = () => {
     bio: "",
     specialties: [] as string[],
     avatarUrl: "",
-    rating: 0
+    rating: 0,
+    email: "",
+    isActive: false,
+
   });
   console.log("formdat-----",formData)
   const [customTag, setCustomTag] = useState("");
@@ -124,7 +131,9 @@ const Counselors = () => {
       bio: "",
       specialties: [],
       avatarUrl: "",
-      rating: 0
+      rating: 0,
+      email: "",
+      isActive: false,
     });
     setCustomTag("");
   };
@@ -159,8 +168,9 @@ const Counselors = () => {
       formDataToSend.append('title', formData.title);
       formDataToSend.append('yearsOfExperience', formData.yearsOfExperience.toString());
       formDataToSend.append('bio', formData.bio || '');
-      formDataToSend.append('isActive', 'true');
+      formDataToSend.append('isActive', 'false');
       formDataToSend.append('rating', formData.rating.toString());
+      formDataToSend.append('email', formData.email);
 
       // Handle specialties array
       formData.specialties.forEach((specialty, index) => {
@@ -222,6 +232,7 @@ const handleOpenDeleteDialog = (counselor: Counselor) => {
 
 };
   const openEditDialog = (counselor: Counselor) => {
+    console.log("formdat-----",counselor)
     setEditingCounselor(counselor);
     setFormData({
       fullName: counselor.fullName,
@@ -231,6 +242,8 @@ const handleOpenDeleteDialog = (counselor: Counselor) => {
       specialties: counselor.specialties,
       avatarUrl: counselor.avatarUrl || "",
       rating: counselor.rating,
+      email: counselor.email,
+      isActive: counselor.isActive,
     });
     setIsEditDialogOpen(true);
   };
@@ -339,8 +352,9 @@ const handleOpenDeleteDialog = (counselor: Counselor) => {
       formDataToSend.append('title', formData.title);
       formDataToSend.append('yearsOfExperience', formData.yearsOfExperience.toString());
       formDataToSend.append('bio', formData.bio || '');
-      formDataToSend.append('isActive', 'true');
+      formDataToSend.append('isActive', formData.isActive.toString());
       formDataToSend.append('rating', formData.rating.toString());
+      formDataToSend.append('email', formData.email);
 
       // Handle specialties array
       formData.specialties.forEach((specialty, index) => {
@@ -376,6 +390,25 @@ const handleOpenDeleteDialog = (counselor: Counselor) => {
     }
   };
 
+  const handleToggleBlogPublish = async (id: string, status: string) => {
+    try {
+      const response = await apiService.publishCounselor(id);
+      if (response.success) {
+        toast({
+          title: "Success",
+          description: response.message,
+        });
+        fetchCounselors(currentPage); // Refresh the current page
+      }
+    } catch (error) {
+      console.error('Error publishing blog:', error);
+      toast({
+        title: "Error",
+        description: "Failed to publish blog",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <Layout>
@@ -419,6 +452,16 @@ const handleOpenDeleteDialog = (counselor: Counselor) => {
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder="Enter designation/title"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="Enter email address"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -508,6 +551,7 @@ const handleOpenDeleteDialog = (counselor: Counselor) => {
                     <TableHead>Experience</TableHead>
                     <TableHead>Specialties</TableHead>
                     <TableHead>Rating</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -538,13 +582,18 @@ const handleOpenDeleteDialog = (counselor: Counselor) => {
                           <div className="text-yellow-500">★</div>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant={counselor.isActive ? "default" : "secondary"}>
+                      <TableCell>{counselor.email}</TableCell>
+                      <TableCell>   <span className={cn(
+                          "px-2 py-1 rounded-full text-xs font-semibold",
+                          counselor.isActive
+                            ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100"
+                            : "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100"
+                        )}>
                           {counselor.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
+                        </span></TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
+                       
                           <Button
                             variant="outline"
                             size="sm"
@@ -614,9 +663,16 @@ const handleOpenDeleteDialog = (counselor: Counselor) => {
           <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Counselor</DialogTitle>
+              <div className="flex items-center justify-between">
               <DialogDescription>
                 Update the counselor details below.
               </DialogDescription>
+              <Switch
+                    checked={formData.isActive}
+                    onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                  />
+              </div>
+             
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
@@ -635,6 +691,16 @@ const handleOpenDeleteDialog = (counselor: Counselor) => {
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="Enter designation/title"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-email">Email *</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="Enter email address"
                 />
               </div>
               <div className="grid gap-2">
@@ -678,6 +744,10 @@ const handleOpenDeleteDialog = (counselor: Counselor) => {
                   placeholder="Select avatar image file"
                 />
               </div>
+              <div className="grid gap-2">
+                  <Label htmlFor="isActive">Active</Label>
+                
+                </div>
               {renderTagsSection()}
             </div>
             <DialogFooter>

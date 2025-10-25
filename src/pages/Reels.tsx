@@ -7,7 +7,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,7 +46,8 @@ interface ReelItem {
   uploadDate: string;
   tags: string[];
   videoUrl: string;
-    isPublished: boolean; // ✅ ADD THIS
+  thumbnailUrl: string;
+  isPublished: boolean; // ✅ ADD THIS
 }
 
 interface FormData {
@@ -57,11 +57,12 @@ interface FormData {
   tags: string;
   duration?: number;
   fileSize?: number;
+  thumbnail: File | null;
 }
 
 export default function Reels() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-const [reelToDelete, setReelToDelete] = useState<string | null>(null);
+  const [reelToDelete, setReelToDelete] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -75,6 +76,7 @@ const [reelToDelete, setReelToDelete] = useState<string | null>(null);
     tags: "",
     duration: undefined,
     fileSize: undefined,
+    thumbnail: null,
   });
 
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -84,34 +86,37 @@ const [reelToDelete, setReelToDelete] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 12; // Number of reels per page
-  const [loading,setLoading]=useState(false)
+  const [loading, setLoading] = useState(false);
 
   const fetchReels = async (pageNumber = 1) => {
-        setLoading(true);
+    setLoading(true);
     try {
       const response = await apiService.getReels(pageNumber, limit);
       if (response.success && response.data) {
-        const formattedReels: ReelItem[] = response.data.reels.map((r: any) => ({
-          id: r.id,
-          title: r.title,
-          caption: r.description,
-          duration: r.durationFormatted || "0:00",
-          views: r.viewCount || 0,
-          likes: r.likeCount || 0,
-          comments: 0,
-          uploadDate: r.createdAt,
-          tags: r.tags || [],
-          videoUrl: r.videoUrl,
-          isPublished: r.isPublished,
-        }));
+        const formattedReels: ReelItem[] = response.data.reels.map(
+          (r: any) => ({
+            id: r.id,
+            title: r.title,
+            caption: r.description,
+            duration: r.durationFormatted || "0:00",
+            views: r.viewCount || 0,
+            likes: r.likeCount || 0,
+            comments: 0,
+            uploadDate: r.createdAt,
+            tags: r.tags || [],
+            videoUrl: r.videoUrl,
+            thumbnailUrl: r.thumbnailUrl,
+            isPublished: r.isPublished,
+          })
+        );
         setReels(formattedReels);
         setTotalPages(response.data.totalPages);
         setPage(response.data.page);
-            setLoading(false);
+        setLoading(false);
       }
     } catch (error) {
       console.error("Failed to fetch reels:", error);
-          setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -124,6 +129,7 @@ const [reelToDelete, setReelToDelete] = useState<string | null>(null);
       title: "",
       caption: "",
       video: null,
+      thumbnail: null,
       tags: "",
       duration: undefined,
       fileSize: undefined,
@@ -137,6 +143,7 @@ const [reelToDelete, setReelToDelete] = useState<string | null>(null);
       title: reel.title,
       caption: reel.caption,
       video: null,
+      thumbnail: null,
       tags: reel.tags.join(", "),
       duration: undefined,
       fileSize: undefined,
@@ -157,6 +164,28 @@ const [reelToDelete, setReelToDelete] = useState<string | null>(null);
     } catch (error) {
       console.error("Delete reel error:", error);
     }
+  };
+  console.log("the form", formData);
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type (images only)
+    if (!file.type.startsWith("image/")) {
+      alert("Please upload a valid image file for thumbnail");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Thumbnail image must be less than 5MB");
+      return;
+    }
+
+    setFormData({
+      ...formData,
+      thumbnail: file,
+    });
   };
 
   // Handle video upload + get duration and size
@@ -201,6 +230,7 @@ const [reelToDelete, setReelToDelete] = useState<string | null>(null);
     data.append("title", formData.title);
     data.append("description", formData.caption);
     data.append("video", formData.video);
+    data.append("thumbnail", formData.thumbnail);
     tagsArray.forEach((tag) => data.append("tags[]", tag));
     if (formData.duration) data.append("duration", String(formData.duration));
     if (formData.fileSize) data.append("fileSize", String(formData.fileSize));
@@ -232,12 +262,12 @@ const [reelToDelete, setReelToDelete] = useState<string | null>(null);
     tagsArray.forEach((tag) => data.append("tags[]", tag));
     if (formData.video) {
       data.append("video", formData.video);
-      if (formData.duration)
-        data.append("duration", String(formData.duration));
-      if (formData.fileSize)
-        data.append("fileSize", String(formData.fileSize));
+      if (formData.duration) data.append("duration", String(formData.duration));
+      if (formData.fileSize) data.append("fileSize", String(formData.fileSize));
     }
-
+    if (formData.thumbnail) {
+      data.append("thumbnail", formData.thumbnail); // ✅ NEW
+    }
     try {
       const response = await apiService.updateReel(editingReel.id, data);
       if (response.success && response.data) {
@@ -250,37 +280,36 @@ const [reelToDelete, setReelToDelete] = useState<string | null>(null);
     }
   };
 
+  const handleTogglePublish = async (id: string, newStatus: boolean) => {
+    console.log("New publish status:", newStatus); // <-- now will be true/false correctly
 
-const handleTogglePublish = async (id: string, newStatus: boolean) => {
-  console.log("New publish status:", newStatus); // <-- now will be true/false correctly
+    try {
+      // Optimistically update UI
+      setReels((prevReels) =>
+        prevReels.map((r) =>
+          r._id === id ? { ...r, isPublished: newStatus } : r
+        )
+      );
 
-  try {
-    // Optimistically update UI
-    setReels((prevReels) =>
-      prevReels.map((r) =>
-        r._id === id ? { ...r, isPublished: newStatus } : r
-      )
-    );
+      // Call appropriate API
+      if (newStatus) {
+        await apiService.publishReel(id);
+        fetchReels();
+      } else {
+        await apiService.unpublishReel(id);
+        fetchReels();
+      }
+    } catch (err) {
+      console.error("Error toggling publish:", err);
 
-    // Call appropriate API
-    if (newStatus) {
-      await apiService.publishReel(id);
-      fetchReels()
-    } else {
-      await apiService.unpublishReel(id);
-      fetchReels()
+      // Revert if failed
+      setReels((prevReels) =>
+        prevReels.map((r) =>
+          r._id === id ? { ...r, isPublished: !newStatus } : r
+        )
+      );
     }
-  } catch (err) {
-    console.error("Error toggling publish:", err);
-
-    // Revert if failed
-    setReels((prevReels) =>
-      prevReels.map((r) =>
-        r._id === id ? { ...r, isPublished: !newStatus } : r
-      )
-    );
-  }
-};
+  };
 
   if (loading) {
     return (
@@ -309,22 +338,21 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
           </Button>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search reels..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 max-w-md"
-          />
-        </div>
 
         <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {reels.map((reel) => (
             <Card key={reel.id} className="overflow-hidden">
               <div className="relative group">
                 <div className="aspect-[9/6] bg-muted flex items-center justify-center">
-                  <Film className="h-12 w-12 text-muted-foreground" />
+                  {reel.thumbnailUrl ? (
+                    <img
+                      src={reel.thumbnailUrl}
+                      alt={reel.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Film className="h-12 w-12 text-muted-foreground" />
+                  )}
                 </div>
                 <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
                   {reel.duration}
@@ -364,8 +392,6 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
                   </div>
                 </div>
 
-
-
                 <div className="flex flex-wrap gap-1">
                   {reel.tags.map((tag) => (
                     <Badge key={tag} variant="secondary">
@@ -375,12 +401,13 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
                 </div>
 
                 <div className="flex justify-end gap-2 mt-2 items-center">
-                
                   <Switch
-                  checked={Boolean(reel.isPublished)}
-                  onCheckedChange={(checked) => handleTogglePublish(reel.id, checked)}
-                />
-                
+                    checked={Boolean(reel.isPublished)}
+                    onCheckedChange={(checked) =>
+                      handleTogglePublish(reel.id, checked)
+                    }
+                  />
+
                   <Button
                     size="icon"
                     variant="outline"
@@ -388,18 +415,18 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
-              <Button
-  size="icon"
-  variant="destructive"
-  onClick={() => {
-    setReelToDelete(reel.id);
-    setDeleteConfirmOpen(true);
-  }}
->
-  <Trash2 className="h-5 w-5" />
-</Button>
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    onClick={() => {
+                      setReelToDelete(reel.id);
+                      setDeleteConfirmOpen(true);
+                    }}
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </Button>
                 </div>
-                   {/* <div className="p-3">
+                {/* <div className="p-3">
           
 
               <div className="flex items-center justify-between mt-3">
@@ -413,7 +440,7 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
             </Card>
           ))}
         </div>
-             {/* Pagination */}
+        {/* Pagination */}
         <div className="flex justify-center gap-2 mt-6">
           <Button
             variant="outline"
@@ -447,7 +474,9 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
               <Input
                 required
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, title: e.target.value })
+                }
               />
             </div>
             <div>
@@ -455,24 +484,50 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
               <Textarea
                 required
                 value={formData.caption}
-                onChange={(e) => setFormData({ ...formData, caption: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, caption: e.target.value })
+                }
               />
             </div>
             <div>
               <Label>Tags (comma separated)</Label>
               <Input
                 value={formData.tags}
-                onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, tags: e.target.value })
+                }
               />
             </div>
             <div>
               <Label>Video File</Label>
-              <Input type="file" accept="video/*" required onChange={handleFileChange} />
+              <Input
+                type="file"
+                accept="video/*"
+                required
+                onChange={handleFileChange}
+              />
               {formData.duration && (
                 <p className="text-xs text-muted-foreground mt-1">
                   Duration: {formData.duration}s | Size: {formData.fileSize} MB
                 </p>
               )}
+            </div>
+            <div>
+              <Label>Thumbnail</Label>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleThumbnailChange}
+              />
+              {/* {formData.thumbnail && (
+    <div className="mt-2">
+      <img
+        src={URL.createObjectURL(formData.thumbnail)}
+        alt="Thumbnail preview"
+        className="w-32 h-20 object-cover rounded border"
+      />
+    </div>
+  )} */}
             </div>
             <DialogFooter>
               <Button type="submit">Upload Reel</Button>
@@ -493,7 +548,9 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
               <Input
                 required
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, title: e.target.value })
+                }
               />
             </div>
             <div>
@@ -501,14 +558,18 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
               <Textarea
                 required
                 value={formData.caption}
-                onChange={(e) => setFormData({ ...formData, caption: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, caption: e.target.value })
+                }
               />
             </div>
             <div>
               <Label>Tags (comma separated)</Label>
               <Input
                 value={formData.tags}
-                onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, tags: e.target.value })
+                }
               />
             </div>
             <div>
@@ -516,9 +577,27 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
               <Input type="file" accept="video/*" onChange={handleFileChange} />
               {formData.video && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  New video selected ({formData.fileSize} MB, {formData.duration}s)
+                  New video selected ({formData.fileSize} MB,{" "}
+                  {formData.duration}s)
                 </p>
               )}
+            </div>
+            <div>
+              <Label>Change Thumbnail</Label>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleThumbnailChange}
+              />
+              {/* {formData.thumbnail && (
+    <div className="mt-2">
+      <img
+        src={URL.createObjectURL(formData.thumbnail)}
+        alt="Thumbnail preview"
+        className="w-32 h-20 object-cover rounded border"
+      />
+    </div>
+  )} */}
             </div>
             <DialogFooter>
               <Button type="submit">Save Changes</Button>
@@ -556,42 +635,42 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
       </Dialog>
 
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-  <DialogContent className="max-w-sm">
-    <DialogHeader>
-      <DialogTitle>Are you sure?</DialogTitle>
-      <CardDescription>
-        This action will permanently delete this reel. You can’t undo this.
-      </CardDescription>
-    </DialogHeader>
-    <DialogFooter className="flex justify-end space-x-2">
-      <Button
-        variant="outline"
-        onClick={() => setDeleteConfirmOpen(false)}
-      >
-        Cancel
-      </Button>
-      <Button
-        variant="destructive"
-        onClick={async () => {
-          if (reelToDelete) {
-            try {
-              await apiService.deleteReel(reelToDelete);
-              setDeleteConfirmOpen(false);
-              setReelToDelete(null);
-              // refresh list after deletion
-              fetchReels(); 
-            } catch (err) {
-              console.error("Delete failed:", err);
-            }
-          }
-        }}
-      >
-        Yes, Delete
-      </Button>
-    </DialogFooter>
-  </DialogContent>
-</Dialog>
-
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Are you sure?</DialogTitle>
+            <CardDescription>
+              This action will permanently delete this reel. You can’t undo
+              this.
+            </CardDescription>
+          </DialogHeader>
+          <DialogFooter className="flex justify-end space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirmOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (reelToDelete) {
+                  try {
+                    await apiService.deleteReel(reelToDelete);
+                    setDeleteConfirmOpen(false);
+                    setReelToDelete(null);
+                    // refresh list after deletion
+                    fetchReels();
+                  } catch (err) {
+                    console.error("Delete failed:", err);
+                  }
+                }
+              }}
+            >
+              Yes, Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

@@ -19,6 +19,7 @@ import Users from "./pages/Users";
 import Counselors from "./pages/Counselors";
 import Meetings from "./pages/Meetings";
 import ChangePassword from "./pages/ChangePassword";
+import Leads from "./pages/Leads";
 
 const queryClient = new QueryClient();
 
@@ -142,6 +143,14 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+  path="/leads"
+  element={
+    <ProtectedRoute>
+      <Leads />
+    </ProtectedRoute>
+  }
+/>
               <Route
               path="/change-password"
               element={

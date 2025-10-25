@@ -12,6 +12,7 @@ import { Plus, Edit, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiService } from "@/lib/api";
 import type { Blog, CreateBlogResponse, GetBlogsResponse, UpdateBlogResponse, DeleteBlogResponse } from "@/lib/api";
+import { Switch } from "@/components/ui/switch";
 
 const Blogs = () => {
   const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -236,6 +237,42 @@ const Blogs = () => {
     });
   };
 
+
+
+  const handleToggleBlogPublish = async (id: string, status: string) => {
+    try {
+      setLoading(true);
+      let response;
+      if (status === 'published') {
+        // Blog is currently published, so unpublish it
+        response = await apiService.unpublishBlog(id);
+        toast({
+          title: "Success",
+          description: "Blog unpublished successfully",
+        });
+      } else {
+        // Blog is currently draft, so publish it
+        response = await apiService.publishBlog(id);
+        toast({
+          title: "Success",
+          description: "Blog published successfully",
+        });
+      }
+
+      if (response.success) {
+        fetchBlogs(currentPage); // Refresh the current page
+      }
+    } catch (error) {
+      console.error('Error updating blog:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update blog",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <Layout>
       <div className="p-6 space-y-6">
@@ -398,6 +435,14 @@ const Blogs = () => {
                       <TableCell>{new Date(blog.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
+                        <Switch
+                            checked={blog.status === 'published'}
+                            onCheckedChange={(checked) => {
+                              const newStatus = checked ? 'published' : 'draft';
+                              handleToggleBlogPublish(blog.id, blog.status);
+                            }}
+                            title={blog.status === 'published' ? 'Unpublish blog' : 'Publish blog'}
+                          />
                           <Button
                             variant="outline"
                             size="sm"

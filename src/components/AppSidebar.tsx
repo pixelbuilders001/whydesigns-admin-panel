@@ -15,6 +15,7 @@ import {
   LogOut,
   BookOpen,
   Calendar,
+  UserCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -23,9 +24,11 @@ import { useAuth, useUser } from "@/contexts/AuthContext";
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Users", href: "/users", icon: Users },
+  { name: "Leads", href: "/leads", icon: UserCheck },
   { name: "Banner", href: "/upload", icon: Upload },
   { name: "Course Videos", href: "/videos", icon: Video },
   { name: "PDF Materials", href: "/pdfs", icon: FileText },
+
   // { name: "Images", href: "/images", icon: Image },
   { name: "Reels", href: "/reels", icon: Film },
   { name: "Blogs", href: "/blogs", icon: BookOpen },
@@ -57,7 +60,7 @@ export function AppSidebar() {
       <div className="flex h-16 items-center justify-between px-4">
         {!collapsed && (
           <h1 className="text-lg font-semibold text-sidebar-foreground">
-            Fashion Admin
+          Whydesignerr Admin
           </h1>
         )}
         <Button

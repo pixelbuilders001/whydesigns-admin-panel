@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { apiService } from "@/lib/api";
 import type { User } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 const Users = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -20,7 +21,7 @@ const Users = () => {
       setLoading(true);
       setError(null);
 
-      const response = await apiService.getUsers(page, 10);
+      const response = await apiService.getUsers(page, 5);
 
       if (response.success && response.data) {
         setUsers(response.data);
@@ -69,7 +70,9 @@ const Users = () => {
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Users ({totalUsers})</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+              Users ({totalUsers})
+            </h1>
             <p className="text-muted-foreground">
               Manage and view all registered users.
             </p>
@@ -77,51 +80,51 @@ const Users = () => {
         </div>
 
         {error && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="shadow-md rounded-md">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
-        <Card>
-      
+        <Card className="shadow-md rounded-md">
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Gender</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead className="font-medium text-gray-900 dark:text-gray-100">Name</TableHead>
+                  <TableHead className="font-medium text-gray-900 dark:text-gray-100">Email</TableHead>
+                  <TableHead className="font-medium text-gray-900 dark:text-gray-100">Phone</TableHead>
+                  <TableHead className="font-medium text-gray-900 dark:text-gray-100">Gender</TableHead>
+                  <TableHead className="font-medium text-gray-900 dark:text-gray-100">Status</TableHead>
+                  <TableHead className="font-medium text-gray-900 dark:text-gray-100">Created</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
+                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                       No users found.
                     </TableCell>
                   </TableRow>
                 ) : (
                   users.map((user) => (
                     <TableRow key={user._id}>
-                      <TableCell>
+                      <TableCell className="font-medium text-gray-700 dark:text-gray-300">
                         {user.firstName} {user.lastName}
                       </TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.phoneNumber || "N/A"}</TableCell>
-                      <TableCell className="capitalize">{user.gender || "N/A"}</TableCell>
+                      <TableCell className="text-gray-700 dark:text-gray-300">{user.email}</TableCell>
+                      <TableCell className="text-gray-700 dark:text-gray-300">{user.phoneNumber || "N/A"}</TableCell>
+                      <TableCell className="capitalize text-gray-700 dark:text-gray-300">{user.gender || "N/A"}</TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs ${
+                        <span className={cn(
+                          "px-2 py-1 rounded-full text-xs font-semibold",
                           user.isActive
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}>
+                            ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100"
+                            : "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100"
+                        )}>
                           {user.isActive ? "Active" : "Inactive"}
                         </span>
                       </TableCell>
-                      <TableCell>{formatDate(user.createdAt || "")}</TableCell>
+                      <TableCell className="text-gray-700 dark:text-gray-300">{formatDate(user.createdAt || "")}</TableCell>
                     </TableRow>
                   ))
                 )}
@@ -139,6 +142,7 @@ const Users = () => {
                     size="sm"
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage <= 1}
+                    className="rounded-md shadow-sm"
                   >
                     Previous
                   </Button>
@@ -147,6 +151,7 @@ const Users = () => {
                     size="sm"
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage >= totalPages}
+                    className="rounded-md shadow-sm"
                   >
                     Next
                   </Button>
