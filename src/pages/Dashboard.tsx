@@ -1,21 +1,32 @@
-import { Video, FileText, Image, Film, MessageSquare, Users, TrendingUp, Eye, TrendingDown, Loader2 } from "lucide-react";
-import { StatsCard } from "@/components/StatsCard";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+"use client";
+
+import {
+  Video,
+  FileText,
+  Image,
+  Film,
+  MessageSquare,
+  Users,
+  TrendingUp,
+  TrendingDown,
+  Loader2,
+  BookOpen,
+  BarChart2,
+  Star,
+  Eye,
+  Download,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { apiService } from "@/lib/api";
-import type { DashboardResponse } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, PieChart, Pie, Cell } from "recharts";
 
+const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#6366f1"];
 
 export default function Dashboard() {
-  const [stats, setStats] = useState<{
-    title: string;
-    value: string | number;
-    icon: any;
-    trend?: { value: number; label: string };
-  }[]>([]);
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -24,197 +35,161 @@ export default function Dashboard() {
       try {
         setLoading(true);
         const response = await apiService.getDashboardSummary();
-
         if (response.success && response.data) {
-          const {
-            users,
-            blogs,
-            testimonials,
-            reels,
-            videos,
-            leads,
-            materials,
-            bookings,
-            counselors,
-          } = response.data;
-
-          setStats([
-            {
-              title: "Users",
-              value: users.total,
-              icon: Users,
-              trend: { value: users.active, label: "Active" },
-            },
-            {
-              title: "Blogs",
-              value: blogs.total,
-              icon: FileText,
-              trend: { value: blogs.published, label: "Published" },
-            },
-            {
-              title: "Testimonials",
-              value: testimonials.total,
-              icon: MessageSquare,
-              trend: { value: testimonials.approved, label: "Approved" },
-            },
-            {
-              title: "Reels",
-              value: reels.total,
-              icon: Film,
-              trend: { value: reels.published, label: "Published" },
-            },
-            {
-              title: "Videos",
-              value: videos.total,
-              icon: Video,
-            },
-            {
-              title: "Leads",
-              value: leads.total,
-              icon: TrendingUp,
-              trend: { value: leads.active, label: "Active" },
-            },
-            {
-              title: "Materials",
-              value: materials.total,
-              icon: Image,
-            },
-            {
-              title: "Bookings",
-              value: bookings.total,
-              icon: TrendingUp,
-              trend: { value: bookings.confirmed, label: "Confirmed" },
-            },
-            {
-              title: "Counselors",
-              value: counselors.total,
-              icon: Users,
-              trend: { value: counselors.active, label: "Active" },
-            },
-          ]);
+          setData(response.data);
         } else {
           toast({
             title: "Error",
-            description: response.message,
+            description: response.message || "Failed to load dashboard data",
             variant: "destructive",
           });
         }
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+      } catch (err) {
         toast({
           title: "Error",
-          description: "Failed to fetch dashboard data",
+          description: "Unable to fetch dashboard data",
           variant: "destructive",
         });
       } finally {
         setLoading(false);
       }
     };
-
     fetchDashboardData();
   }, [toast]);
 
-  if (loading) {
+  if (loading)
     return (
-      <div className="p-6 space-y-6 bg-gray-100 dark:bg-gray-800 h-full flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        Loading dashboard data...
+      <div className="flex h-full items-center justify-center bg-gray-100 dark:bg-gray-900">
+        <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
       </div>
     );
-  }
+
+  const { users, blogs, testimonials, reels, videos, leads, materials, bookings, counselors } = data;
+
+  // Chart Data
+  const contentChart = [
+    { name: "Blogs", value: blogs.total },
+    { name: "Reels", value: reels.total },
+    { name: "Videos", value: videos.total },
+    { name: "Materials", value: materials.total },
+    { name: "Testimonials", value: testimonials.total },
+  ];
+
+  const performanceChart = [
+    { name: "Blog Views", value: blogs.totalViews },
+    { name: "Reel Views", value: reels.totalViews },
+    { name: "Video Views", value: videos.totalViews },
+  ];
 
   return (
-    <div className="p-6 space-y-6 bg-gray-100 dark:bg-gray-800 h-full">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-            Welcome back!
-          </h1>
-          <p className="text-gray-700 dark:text-gray-300">
-            Here's an overview of your fashion education platform.
-          </p>
-        </div>
+    <div className="h-screen overflow-y-auto p-6 space-y-8 bg-gray-100 dark:bg-gray-900">
+      {/* HEADER */}
+      <header className="sticky bg-gray-100 dark:bg-gray-900 z-10 pb-2">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard Overview</h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          Here’s a detailed snapshot of your platform’s performance and engagement.
+        </p>
+      </header>
+  
+      {/* TOP SUMMARY GRID */}
+      <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <SummaryCard title="Total Users" value={users.total} icon={Users} subtitle={`${users.active} active`} />
+        <SummaryCard title="Total Blogs" value={blogs.total} icon={FileText} subtitle={`${blogs.published} published`} />
+        <SummaryCard title="Total Reels" value={reels.total} icon={Film} subtitle={`${reels.published} live`} />
+        <SummaryCard title="Total Videos" value={videos.total} icon={Video} subtitle={`${videos.published} live`} />
+        <SummaryCard title="Testimonials" value={testimonials.total} icon={MessageSquare} subtitle={`${testimonials.published} live`} />
+        <SummaryCard title="Leads" value={leads.total} icon={TrendingUp} subtitle={`${leads.active} active`} />
+        <SummaryCard title="Materials" value={materials.total} icon={Image} subtitle={`${materials.published} published`} />
+        <SummaryCard title="Meetings" value={bookings.total} icon={BookOpen} subtitle={`${bookings.confirmed} confirmed`} />
+        <SummaryCard title="Counselors" value={counselors.total} icon={Users} subtitle={`${counselors.active} active`} />
       </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {stats.map((stat, index) => (
-          <Card key={index} className="shadow-md rounded-lg bg-white dark:bg-gray-700">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <span className="text-gray-700 dark:text-gray-300 text-sm">{stat.title}</span>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-gray-50">{stat.value}</div>
-                </div>
-                <stat.icon className="h-8 w-8 text-blue-500" />
-              </div>
-              {stat.trend && (
-                <div className="flex items-center mt-2 text-sm text-green-600 dark:text-green-400">
-                  {stat.trend.value > 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-                  <span className="ml-1">{stat.trend.value} {stat.trend.label}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+  
+      {/* ANALYTICS SECTION */}
+      <div className="grid gap-6 md:grid-cols-2 min-h-0">
+        {/* Content Distribution Pie */}
+        <Card className="shadow-lg border dark:border-gray-700 overflow-hidden">
+          <CardHeader>
+            <CardTitle>Content Distribution</CardTitle>
+            <CardDescription>Breakdown of content types on the platform</CardDescription>
+          </CardHeader>
+          <CardContent className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={contentChart} dataKey="value" nameKey="name" outerRadius={90} label>
+                  {contentChart.map((_, index) => (
+                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+  
+        {/* Engagement Bar Chart */}
+        <Card className="shadow-lg border dark:border-gray-700 overflow-hidden">
+          <CardHeader>
+            <CardTitle>Engagement Overview</CardTitle>
+            <CardDescription>Views and activity across blogs, reels, and videos</CardDescription>
+          </CardHeader>
+          <CardContent className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={performanceChart}>
+                <XAxis dataKey="name" />
+                <Tooltip />
+                <Bar dataKey="value" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        {/*  Recent Activity - Example
-          <Card className="col-span-4 shadow-md rounded-lg bg-white dark:bg-gray-700">
-            <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-gray-50">Recent Activity</CardTitle>
-              <CardDescription className="text-gray-700 dark:text-gray-300">
-                Latest uploads and updates to your content.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {[
-                { type: "Video", title: "Advanced Draping Techniques", time: "2 hours ago" },
-                { type: "PDF", title: "Color Theory Guide", time: "4 hours ago" },
-                { type: "Image", title: "Spring Collection Gallery", time: "6 hours ago" },
-                { type: "Reel", title: "Quick Pattern Tips", time: "1 day ago" },
-              ].map((activity, index) => (
-                <div key={index} className="flex items-center py-2 border-b border-gray-200 dark:border-gray-700 last:border-none">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-3" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-50">{activity.title}</p>
-                    <p className="text-xs text-gray-700 dark:text-gray-300">{activity.type} • {activity.time}</p>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        */}
-
-        {/* Quick Actions - Example
-          <Card className="col-span-3 shadow-md rounded-lg bg-white dark:bg-gray-700">
-            <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-gray-50">Quick Actions</CardTitle>
-              <CardDescription className="text-gray-700 dark:text-gray-300">
-                Frequently used actions for content management.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button className="w-full justify-start bg-blue-100 hover:bg-blue-200 text-blue-800 dark:bg-blue-800 dark:hover:bg-blue-700 dark:text-blue-50 rounded-md shadow-sm">
-                <Video className="mr-2 h-4 w-4" />
-                Upload Course Video
-              </Button>
-              <Button className="w-full justify-start bg-blue-100 hover:bg-blue-200 text-blue-800 dark:bg-blue-800 dark:hover:bg-blue-700 dark:text-blue-50 rounded-md shadow-sm">
-                <Image className="mr-2 h-4 w-4" />
-                Add Images
-              </Button>
-              <Button className="w-full justify-start bg-blue-100 hover:bg-blue-200 text-blue-800 dark:bg-blue-800 dark:hover:bg-blue-700 dark:text-blue-50 rounded-md shadow-sm">
-                <Film className="mr-2 h-4 w-4" />
-                Create Reel
-              </Button>
-              <Button className="w-full justify-start bg-blue-100 hover:bg-blue-200 text-blue-800 dark:bg-blue-800 dark:hover:bg-blue-700 dark:text-blue-50 rounded-md shadow-sm">
-                <MessageSquare className="mr-2 h-4 w-4" />
-                Add Testimonial
-              </Button>
-            </CardContent>
-          </Card>
-        */}
-      </div>
+  
+      {/* QUICK INSIGHTS */}
+      {/* <div className="grid gap-6 md:grid-cols-3">
+        <InsightCard
+          title="Top Performing Content"
+          description="Reels have the highest engagement rate with an average of 13.2 views per reel."
+          icon={TrendingUp}
+        />
+        <InsightCard
+          title="User Activity"
+          description={`${users.active} out of ${users.total} users are active.`}
+          icon={Users}
+        />
+        <InsightCard
+          title="Content Health"
+          description={`${blogs.published} blogs, ${videos.published} videos, and ${materials.published} PDFs published successfully.`}
+          icon={BarChart2}
+        />
+      </div> */}
     </div>
   );
+  
 }
+
+/* ---------------- Helper Components ---------------- */
+
+const SummaryCard = ({ title, value, icon: Icon, subtitle }: any) => (
+  <Card className="bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition rounded-xl border border-gray-200 dark:border-gray-700">
+    <CardContent className="p-5 flex items-center justify-between">
+      <div>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{value}</h3>
+        <p className="text-xs text-green-500 dark:text-gray-400">{subtitle}</p>
+      </div>
+      <Icon className="h-8 w-8 text-blue-500" />
+    </CardContent>
+  </Card>
+);
+
+const InsightCard = ({ title, description, icon: Icon }: any) => (
+  <Card className="bg-white dark:bg-gray-800 shadow-md rounded-xl border border-gray-200 dark:border-gray-700">
+    <CardHeader className="flex flex-row items-center space-x-3">
+      <Icon className="h-5 w-5 text-blue-500" />
+      <CardTitle className="text-lg">{title}</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <p className="text-sm text-gray-600 dark:text-gray-400">{description}</p>
+    </CardContent>
+  </Card>
+);

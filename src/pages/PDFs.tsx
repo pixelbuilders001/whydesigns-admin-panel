@@ -24,6 +24,7 @@ interface PDFMaterial {
   fileSize: number;
   category: string;
   tags: string[];
+  isPublished: boolean;
   uploadedBy: {
     _id: string;
     name: string;
@@ -388,31 +389,32 @@ export default function PDFs() {
   }
 
   const handleTogglePDF = async (id: string, currentStatus: boolean) => {
-    console.log("stsus---",id,currentStatus)
+    console.log("New publish status:", currentStatus); // <-- now will be true/false correctly
     try {
+      // Optimistically update UI
+      setPdfs((prevPDFs) =>
+        prevPDFs.map((p) =>
+          p._id === id ? { ...p, isPublished: currentStatus } : p
+        )
+      );
+  
+      // Call appropriate API
       if (currentStatus) {
-        // PDF is currently active, so deactivate it
-        await apiService.deactivateMaterial(id);
-        toast({
-          title: "Success",
-          description: "PDF deactivated successfully",
-        });
+        await apiService.unpublishPdf(id);
+        fetchPDFs();
       } else {
-        // PDF is currently inactive, so activate it
-        await apiService.activateMaterial(id);
-        toast({
-          title: "Success",
-          description: "PDF activated successfully",
-        });
+        await apiService.publishPdf(id);
+        fetchPDFs();
       }
-      fetchPDFs(currentPage);
-    } catch (error) {
-      console.error('Error toggling PDF status:', error);
-      toast({
-        title: "Error",
-        description: `Failed to ${currentStatus ? 'deactivate' : 'activate'} PDF`,
-        variant: "destructive",
-      });
+    } catch (err) {
+      console.error("Error toggling publish:", err);
+  
+      // Revert if failed
+      setPdfs((prevPDFs) =>
+        prevPDFs.map((p) =>
+          p._id === id ? { ...p, isPublished: !currentStatus } : p
+        )
+      );
     }
   };
 
@@ -556,7 +558,7 @@ export default function PDFs() {
                   <TableHead>File Size</TableHead>
                   <TableHead>Downloads</TableHead>
                   <TableHead>Uploaded By</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Published</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -572,11 +574,11 @@ export default function PDFs() {
                       <TableCell>{pdf.uploadedBy.fullName}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs ${
-                          pdf.isActive
+                          pdf.isPublished
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
                         }`}>
-                          {pdf.isActive ? "Active" : "Inactive"}
+                          {pdf.isPublished ? "Published" : "Unpublished"}
                         </span>
                       </TableCell>
                       <TableCell>{new Date(pdf.createdAt).toLocaleDateString()}</TableCell>
@@ -608,9 +610,9 @@ export default function PDFs() {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                              <Switch
-                            checked={pdf.isActive}
-                             onCheckedChange={(checked) => handleTogglePDF(pdf.id, pdf.isActive)}
-                            title={pdf.isActive ? "Deactivate PDF" : "Activate PDF"}
+                            checked={pdf.isPublished  }
+                             onCheckedChange={(checked) => handleTogglePDF(pdf.id, pdf.isPublished)}
+                            title={pdf.isPublished ? "Deactivate PDF" : "Activate PDF"}
                           />
                         </div>
                       </TableCell>

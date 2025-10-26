@@ -527,6 +527,74 @@ export interface LeadsResponse {
   };
 }
 
+export interface BannerData {
+  _id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  link: string;
+  altText: string;
+  isPublished: boolean;
+  publishedAt: string;
+  isActive: boolean;
+  createdBy: any;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateBannerResponse {
+  success: boolean;
+  data: BannerData;
+}
+
+export interface BannersResponse {
+  success: boolean;
+  message: string;
+  data: BannerData[];
+  meta?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+export interface Team {
+  _id: string;
+  name: string;
+  designation: string;
+  description: string;
+  image: string;
+  isPublished: boolean;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TeamResponse {
+  success: boolean;
+  message: string;
+  data: Team[];
+  meta?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface CreateTeamRequest {
+  name: string;
+  designation: string;
+  description: string;
+  image: File;
+}
+
+export interface CreateTeamResponse {
+  success: boolean;
+  message: string;
+  data: Team;
+}
 class ApiService {
   private baseURL: string;
   private token: string | null = null;
@@ -1314,7 +1382,7 @@ async publishBlog(id: string): Promise<{ success: boolean; message: string }> {
   const url = `${this.baseURL}/api/v1/blogs/${id}/publish`;
 
   const config: RequestInit = {
-    method: 'PATCH',
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
@@ -1340,7 +1408,7 @@ async unpublishBlog(id: string): Promise<{ success: boolean; message: string }> 
   const url = `${this.baseURL}/api/v1/blogs/${id}/unpublish`;
 
   const config: RequestInit = {
-    method: 'PATCH',
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
@@ -1398,7 +1466,7 @@ async createVideo(formData: FormData): Promise<CreateReelResponse> {
 
 async getVideos(page: number,limit:number): Promise<ReelsResponse> {
  
-  const url = `${this.baseURL}/api/v1/videos/all/videos?page=${page}&limit=${limit}`;
+  const url = `${this.baseURL}/api/v1/videos?page=${page}&limit=${limit}`;
 
  const config: RequestInit = {
    method: 'GET', 
@@ -1633,7 +1701,376 @@ async publishTestimonial(id: string): Promise<{ success: boolean; message: strin
   }
  }
 
+ async createBanner(formData: FormData): Promise<CreateBannerResponse> {
+  const url = `${this.baseURL}/api/v1/banners`;
 
+  const config: RequestInit = {
+    method: 'POST',
+    headers: {
+      // Don't set Content-Type for FormData - browser sets it automatically with boundary
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+    body: formData,
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error creating banner:', error);
+    throw error;
+  }
+}
+
+
+
+ async getBanners(page: number = 1, limit: number = 2): Promise<TestimonialResponse> {
+  
+  const url = `${this.baseURL}/api/v1/banners?page=${page}&limit=${limit}`;
+
+const config: RequestInit = {
+method: 'GET',
+headers: {
+  'Content-Type': 'application/json',
+  ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+},
+};
+
+try {
+const response = await fetch(url, config);
+const data = await response.json();
+
+if (!response.ok) {
+  throw new Error(data.message || `HTTP error! status: ${response.status}`);
+}
+
+return data;
+} catch (error) {
+console.error('API request failed:', error);
+throw error;
+}
+}
+
+async updateBanner(id: string, formData: FormData): Promise<CreateBannerResponse> {
+  const url = `${this.baseURL}/api/v1/banners/${id}`;
+
+  const config: RequestInit = {
+    method: 'PATCH',
+    headers: {
+      // Don't set Content-Type for FormData - browser sets it automatically with boundary
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+    body: formData,
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error updating banner:', error);
+    throw error;
+  }
+}
+
+// Delete Banner
+async deleteBanner(id: string): Promise<{ success: boolean; message: string }> {
+  const url = `${this.baseURL}/api/v1/banners/${id}`;
+
+  const config: RequestInit = {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error deleting banner:', error);
+    throw error;
+  }
+}
+
+
+async publishPdf(id: string): Promise<{ success: boolean; message: string }> {
+  const url = `${this.baseURL}/api/v1/materials/${id}/publish`;
+
+  const config: RequestInit = {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error publishing reel:', error);
+    throw error;
+  }
+}
+
+async unpublishPdf(id: string): Promise<{ success: boolean; message: string }> {
+  const url = `${this.baseURL}/api/v1/materials/${id}/unpublish`;
+
+  const config: RequestInit = {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error unpublishing reel:', error);
+    throw error;
+  }
+}
+
+
+async publishBanner(id: string): Promise<{ success: boolean; message: string }> {
+  const url = `${this.baseURL}/api/v1/banners/${id}/publish`;
+
+  const config: RequestInit = {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error publishing reel:', error);
+    throw error;
+  }
+}
+
+async unpublishBanner(id: string): Promise<{ success: boolean; message: string }> {
+  const url = `${this.baseURL}/api/v1/banners/${id}/unpublish`;
+
+  const config: RequestInit = {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error unpublishing reel:', error);
+    throw error;
+  }
+}
+
+async getTeams(page: number = 1, limit: number = 2): Promise<TestimonialResponse> {
+  
+  const url = `${this.baseURL}/api/v1/team?page=${page}&limit=${limit}`;
+
+const config: RequestInit = {
+method: 'GET',
+headers: {
+  'Content-Type': 'application/json',
+  ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+},
+};
+
+try {
+const response = await fetch(url, config);
+const data = await response.json();
+
+if (!response.ok) {
+  throw new Error(data.message || `HTTP error! status: ${response.status}`);
+}
+
+return data;
+} catch (error) {
+console.error('API request failed:', error);
+throw error;
+}
+}
+async createTeam(formData: FormData): Promise<CreateTeamResponse> {
+  const url = `${this.baseURL}/api/v1/team`;
+
+  const config: RequestInit = {
+    method: 'POST',
+    body: formData,
+    headers: {
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error creating team member:', error);
+    throw error;
+  }
+}
+
+async updateTeam(id: string, formData: FormData): Promise<CreateTeamResponse> {
+  const url = `${this.baseURL}/api/v1/team/${id}`;
+
+  const config: RequestInit = {
+    method: 'PATCH',
+    body: formData,
+    headers: {
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error updating team member:', error);
+    throw error;
+  }
+}
+
+async deleteTeam(id: string): Promise<{ success: boolean; message: string }> {
+  const url = `${this.baseURL}/api/v1/team/${id}`;
+
+  const config: RequestInit = {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error deleting team member:', error);
+    throw error;
+  }
+}
+
+async toggleTeamStatus(id: string, status: 'publish' | 'unpublish'): Promise<{ success: boolean; message: string }> {
+  const url = `${this.baseURL}/api/v1/team/${id}/${status}`;
+
+  const config: RequestInit = {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error(`Error ${status}ing team member:`, error);
+    throw error;
+  }
+}
+async deleteLead(id: string): Promise<{ success: boolean; message: string }> {
+  const url = `${this.baseURL}/api/v1/leads/${id}`;
+
+  const config: RequestInit = {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error deleting team member:', error);
+    throw error;
+  }
+}
 
 
 

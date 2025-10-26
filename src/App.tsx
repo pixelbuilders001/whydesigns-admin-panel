@@ -20,6 +20,7 @@ import Counselors from "./pages/Counselors";
 import Meetings from "./pages/Meetings";
 import ChangePassword from "./pages/ChangePassword";
 import Leads from "./pages/Leads";
+import Teams from "./pages/Teams";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Upload />
+                </ProtectedRoute>
+              }
+            />
+               <Route
+              path="/team"
+              element={
+                <ProtectedRoute>
+                  <Teams/>
                 </ProtectedRoute>
               }
             />

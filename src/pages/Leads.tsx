@@ -8,13 +8,16 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Trash2 } from "lucide-react";
 import { apiService } from "@/lib/api";
 import type { Lead } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
+import { cn } from "@/lib/utils";
 
 const Leads = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -23,13 +26,18 @@ const Leads = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalLeads, setTotalLeads] = useState(0);
+  const { toast } = useToast();
+
+  // Delete modal state
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
 
   const fetchLeads = async (page: number = 1) => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await apiService.getLeads(page, 10);
+      const response = await apiService.getLeads(page, 6);
 
       if (response.success && response.data) {
         setLeads(response.data.leads);
@@ -59,6 +67,39 @@ const Leads = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
+  };
+
+  const openDeleteModal = (lead: Lead) => {
+    setLeadToDelete(lead);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteLead = async () => {
+    if (leadToDelete) {
+      try {
+        await apiService.deleteLead(leadToDelete._id);
+        toast({
+          title: "Success",
+          description: "Lead deleted successfully",
+        });
+        fetchLeads(currentPage);
+      } catch (error) {
+        console.error("Error deleting lead:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete lead",
+          variant: "destructive",
+        });
+      } finally {
+        setIsDeleteModalOpen(false);
+        setLeadToDelete(null);
+      }
+    }
+  };
+
+  const cancelDeleteLead = () => {
+    setIsDeleteModalOpen(false);
+    setLeadToDelete(null);
   };
 
   if (loading) {
@@ -102,12 +143,14 @@ const Leads = () => {
                   <TableHead>Area of Interest</TableHead>
                   <TableHead>Message</TableHead>
                   <TableHead>Created</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {leads.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
+                    <TableCell colSpan={7} className="text-center py-8">
                       No leads found.
                     </TableCell>
                   </TableRow>
@@ -149,6 +192,24 @@ const Leads = () => {
                         )}
                       </TableCell>
                       <TableCell>{formatDate(lead.createdAt)}</TableCell>
+                      <TableCell> <span className={cn(
+                          "px-2 py-1 rounded-full text-xs font-semibold",
+                          lead.contacted
+                            ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100"
+                            : "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100"
+                        )}>
+                          {lead.contacted ? "Contacted" : "Pending"}
+                        </span></TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => openDeleteModal(lead)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -182,6 +243,34 @@ const Leads = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+          <DialogContent className="sm:max-w-[400px]">
+            <DialogHeader>
+              <DialogTitle>Delete Confirmation</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete the lead for{" "}
+                <span className="font-semibold">
+                  {leadToDelete?.fullName}
+                </span>
+                ? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={cancelDeleteLead}>
+                Cancel
+              </Button>
+              <Button 
+                type="button" 
+                variant="destructive" 
+                onClick={confirmDeleteLead}
+              >
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

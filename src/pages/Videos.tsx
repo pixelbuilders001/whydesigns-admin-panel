@@ -48,7 +48,7 @@ interface ReelItem {
   tags: string[];
   videoUrl: string;
   thumbnailUrl: string;
-  isPublished: boolean; // ✅ ADD THIS
+  isPublished: boolean;
 }
 
 interface FormData {
@@ -59,6 +59,7 @@ interface FormData {
   duration?: number;
   fileSize?: number;
   thumbnail: File | null;
+  poster: File | null; // ✅ ADDED POSTER FIELD
 }
 
 export default function Videos() {
@@ -78,6 +79,7 @@ export default function Videos() {
     duration: undefined,
     fileSize: undefined,
     thumbnail: null,
+    poster: null, // ✅ ADDED POSTER FIELD
   });
 
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -86,7 +88,7 @@ export default function Videos() {
   // Pagination state
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const limit = 12; // Number of reels per page
+  const limit = 12;
   const [loading, setLoading] = useState(false);
 
   const fetchReels = async (pageNumber = 1) => {
@@ -131,6 +133,7 @@ export default function Videos() {
       caption: "",
       video: null,
       thumbnail: null,
+      poster: null, // ✅ INITIALIZE POSTER
       tags: "",
       duration: undefined,
       fileSize: undefined,
@@ -145,6 +148,7 @@ export default function Videos() {
       caption: reel.caption,
       video: null,
       thumbnail: null,
+      poster: null, // ✅ INITIALIZE POSTER
       tags: reel.tags.join(", "),
       duration: undefined,
       fileSize: undefined,
@@ -166,18 +170,17 @@ export default function Videos() {
       console.error("Delete reel error:", error);
     }
   };
-  console.log("the form", formData);
+
+  // Handle thumbnail change
   const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type (images only)
     if (!file.type.startsWith("image/")) {
       alert("Please upload a valid image file for thumbnail");
       return;
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert("Thumbnail image must be less than 5MB");
       return;
@@ -186,6 +189,27 @@ export default function Videos() {
     setFormData({
       ...formData,
       thumbnail: file,
+    });
+  };
+
+  // ✅ ADDED: Handle poster change
+  const handlePosterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please upload a valid image file for poster");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Poster image must be less than 5MB");
+      return;
+    }
+
+    setFormData({
+      ...formData,
+      poster: file,
     });
   };
 
@@ -232,7 +256,17 @@ export default function Videos() {
     data.append("title", formData.title);
     data.append("description", formData.caption);
     data.append("video", formData.video);
-    data.append("thumbnail", formData.thumbnail);
+    
+    // Append thumbnail if provided
+    if (formData.thumbnail) {
+      data.append("thumbnail", formData.thumbnail);
+    }
+    
+    // ✅ ADDED: Append poster if provided
+    if (formData.poster) {
+      data.append("poster", formData.poster);
+    }
+    
     tagsArray.forEach((tag) => data.append("tags[]", tag));
     if (formData.duration) data.append("duration", String(formData.duration));
     if (formData.fileSize) data.append("fileSize", String(formData.fileSize));
@@ -265,14 +299,22 @@ export default function Videos() {
     data.append("title", formData.title);
     data.append("description", formData.caption);
     tagsArray.forEach((tag) => data.append("tags[]", tag));
+    
     if (formData.video) {
       data.append("video", formData.video);
       if (formData.duration) data.append("duration", String(formData.duration));
       if (formData.fileSize) data.append("fileSize", String(formData.fileSize));
     }
+    
     if (formData.thumbnail) {
-      data.append("thumbnail", formData.thumbnail); // ✅ NEW
+      data.append("thumbnail", formData.thumbnail);
     }
+    
+    // ✅ ADDED: Append poster if provided
+    if (formData.poster) {
+      data.append("poster", formData.poster);
+    }
+
     try {
       const response = await apiService.updateVideo(editingReel.id, data);
       if (response.success && response.data) {
@@ -288,17 +330,15 @@ export default function Videos() {
   };
 
   const handleTogglePublish = async (id: string, newStatus: boolean) => {
-    console.log("New publish status:", newStatus); // <-- now will be true/false correctly
+    console.log("New publish status:", newStatus);
 
     try {
-      // Optimistically update UI
       setReels((prevReels) =>
         prevReels.map((r) =>
-          r._id === id ? { ...r, isPublished: newStatus } : r
+          r.id === id ? { ...r, isPublished: newStatus } : r
         )
       );
 
-      // Call appropriate API
       if (newStatus) {
         await apiService.publishVideo(id);
         fetchReels();
@@ -308,11 +348,9 @@ export default function Videos() {
       }
     } catch (err) {
       console.error("Error toggling publish:", err);
-
-      // Revert if failed
       setReels((prevReels) =>
         prevReels.map((r) =>
-          r._id === id ? { ...r, isPublished: !newStatus } : r
+          r.id === id ? { ...r, isPublished: !newStatus } : r
         )
       );
     }
@@ -329,6 +367,7 @@ export default function Videos() {
       </Layout>
     );
   }
+
   return (
     <Layout>
       <div className="p-6 space-y-6">
@@ -344,7 +383,6 @@ export default function Videos() {
             Create Video
           </Button>
         </div>
-
 
         <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {reels.map((reel) => (
@@ -391,12 +429,6 @@ export default function Videos() {
                   <div className="flex items-center space-x-2">
                     <Eye className="h-3 w-3 mr-2" />  {reel.views}
                   </div>
-                  {/* <div className="flex items-center space-x-2">
-                    <Heart className="h-3 w-3" /> {reel.likes}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <MessageCircle className="h-3 w-3" /> {reel.comments}
-                  </div> */}
                 </div>
 
                 <div className="flex flex-wrap gap-1">
@@ -433,20 +465,11 @@ export default function Videos() {
                     <Trash2 className="h-5 w-5" />
                   </Button>
                 </div>
-                {/* <div className="p-3">
-          
-
-              <div className="flex items-center justify-between mt-3">
-                <span className="text-sm font-medium">
-                  {reel.isPublished ? "Published" : "Unpublished"}
-                </span>
-             
-              </div>
-            </div> */}
               </CardContent>
             </Card>
           ))}
         </div>
+
         {/* Pagination */}
         <div className="flex justify-center gap-2 mt-6">
           <Button
@@ -527,24 +550,44 @@ export default function Videos() {
                 onChange={handleThumbnailChange}
               />
               {/* {formData.thumbnail && (
-    <div className="mt-2">
-      <img
-        src={URL.createObjectURL(formData.thumbnail)}
-        alt="Thumbnail preview"
-        className="w-32 h-20 object-cover rounded border"
-      />
-    </div>
-  )} */}
+                <div className="mt-2">
+                  <img
+                    src={URL.createObjectURL(formData.thumbnail)}
+                    alt="Thumbnail preview"
+                    className="w-32 h-20 object-cover rounded border"
+                  />
+                </div>
+              )} */}
+            </div>
+            {/* ✅ ADDED: Poster Field */}
+            <div>
+              <Label>Poster</Label>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handlePosterChange}
+              />
+              {/* {formData.poster && (
+                <div className="mt-2">
+                  <img
+                    src={URL.createObjectURL(formData.poster)}
+                    alt="Poster preview"
+                    className="w-32 h-20 object-cover rounded border"
+                  />
+                </div>
+              )} */}
             </div>
             <DialogFooter>
-              <Button type="submit">   {isSubmitting ? (
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Uploading...
                   </>
                 ) : (
                   "Upload Reel"
-                )}</Button>
+                )}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -603,25 +646,45 @@ export default function Videos() {
                 accept="image/*"
                 onChange={handleThumbnailChange}
               />
-              {/* {formData.thumbnail && (
-    <div className="mt-2">
-      <img
-        src={URL.createObjectURL(formData.thumbnail)}
-        alt="Thumbnail preview"
-        className="w-32 h-20 object-cover rounded border"
-      />
-    </div>
-  )} */}
+              {formData.thumbnail && (
+                <div className="mt-2">
+                  <img
+                    src={URL.createObjectURL(formData.thumbnail)}
+                    alt="Thumbnail preview"
+                    className="w-32 h-20 object-cover rounded border"
+                  />
+                </div>
+              )}
+            </div>
+            {/* ✅ ADDED: Poster Field */}
+            <div>
+              <Label>Change Poster</Label>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handlePosterChange}
+              />
+              {formData.poster && (
+                <div className="mt-2">
+                  <img
+                    src={URL.createObjectURL(formData.poster)}
+                    alt="Poster preview"
+                    className="w-32 h-20 object-cover rounded border"
+                  />
+                </div>
+              )}
             </div>
             <DialogFooter>
-              <Button type="submit">   {isSubmitting ? (
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Uploading...
+                    Updating...
                   </>
                 ) : (
-                  "Upload Reel"
-                )}</Button>
+                  "Update Reel"
+                )}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -660,7 +723,7 @@ export default function Videos() {
           <DialogHeader>
             <DialogTitle>Are you sure?</DialogTitle>
             <CardDescription>
-              This action will permanently delete this reel. You can’t undo
+              This action will permanently delete this reel. You can't undo
               this.
             </CardDescription>
           </DialogHeader>
@@ -679,7 +742,6 @@ export default function Videos() {
                     await apiService.deleteVideo(reelToDelete);
                     setDeleteConfirmOpen(false);
                     setReelToDelete(null);
-                    // refresh list after deletion
                     fetchReels();
                   } catch (err) {
                     console.error("Delete failed:", err);

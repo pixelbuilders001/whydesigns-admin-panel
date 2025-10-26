@@ -218,6 +218,7 @@ const Blogs = () => {
 
   const openAddDialog = () => {
     setIsAddDialogOpen(true);
+    resetForm()
   };
 
   // Helper function to generate slug from title
@@ -236,8 +237,6 @@ const Blogs = () => {
       slug: generateSlug(title)
     });
   };
-
-
 
   const handleToggleBlogPublish = async (id: string, status: string) => {
     try {
@@ -273,6 +272,7 @@ const Blogs = () => {
       setLoading(false);
     }
   };
+
   return (
     <Layout>
       <div className="p-6 space-y-6">
@@ -285,19 +285,19 @@ const Blogs = () => {
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button onClick={openAddDialog}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Blog
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="sm:max-w-[900px] max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add New Blog</DialogTitle>
                 <DialogDescription>
                   Create a new blog post. Fill in the details below.
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
+              <div className="grid gap-3 py-3">
                 <div className="grid gap-2">
                   <Label htmlFor="title">Title</Label>
                   <Input
@@ -323,7 +323,7 @@ const Blogs = () => {
                     value={formData.content}
                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                     placeholder="Enter blog content"
-                    rows={6}
+                    rows={4}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -520,14 +520,14 @@ const Blogs = () => {
 
         {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[900px] max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Blog</DialogTitle>
               <DialogDescription>
                 Update the blog post details below.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
+            <div className="grid gap-3 py-3">
               <div className="grid gap-2">
                 <Label htmlFor="edit-title">Title</Label>
                 <Input
@@ -553,7 +553,7 @@ const Blogs = () => {
                   value={formData.content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                   placeholder="Enter blog content"
-                  rows={6}
+                  rows={4}
                 />
               </div>
               <div className="grid gap-2">

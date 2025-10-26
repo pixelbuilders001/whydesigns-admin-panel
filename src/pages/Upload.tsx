@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload as UploadIcon, File, X, Video, FileText, Image as ImageIcon, Plus, Edit, Trash2 } from "lucide-react";
+import { Upload as UploadIcon, File, X, Image as ImageIcon, Plus, Edit, Trash2, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -8,57 +8,23 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { Layout } from "@/components/Layout";
 import { apiService } from "@/lib/api";
+import type { BannerData, CreateBannerResponse, BannersResponse } from "@/lib/api";
+import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
+import { Switch } from "@/components/ui/switch";
 
-interface UploadedFile extends File {
-  preview?: string;
-  id: string;
-}
-
-interface Banner {
-  _id: string;
-  title: string;
-  description: string;
-  category: string;
-  tags: string[];
-  files: string[];
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface BannersResponse {
-  success: boolean;
-  message: string;
-  data: Banner[];
-  meta?: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-interface CreateBannerRequest {
-  title: string;
-  description: string;
-  category: string;
-  tags: string[];
-  files: File[];
-}
+type Banner = BannerData;
 
 export default function Upload() {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [metadata, setMetadata] = useState({
     title: "",
     description: "",
-    category: "",
-    tags: [] as string[],
+    image: null as File | null,
   });
-  const [currentTag, setCurrentTag] = useState("");
   const { toast } = useToast();
 
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -67,6 +33,7 @@ export default function Upload() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalBanners, setTotalBanners] = useState(0);
@@ -75,13 +42,12 @@ export default function Upload() {
   const fetchBanners = async (page: number = 1) => {
     try {
       setLoading(true);
-      // You'll need to add getBanners method to your apiService
       const response: BannersResponse = await apiService.getBanners(page, 10);
       
       if (response.success) {
-        setBanners(response.data);
-        setTotalPages(response.meta?.totalPages || 1);
-        setTotalBanners(response.meta?.total || 0);
+        setBanners(response.data.banners);
+        setTotalPages(response.data?.totalPages || 1);
+        setTotalBanners(response.data?.total || 0);
         setCurrentPage(page);
       }
     } catch (error) {
@@ -108,70 +74,51 @@ export default function Upload() {
 
   const resetForm = () => {
     setFiles([]);
-    setMetadata({ title: "", description: "", category: "", tags: [] });
-    setCurrentTag("");
+    setMetadata({ title: "", description: "", image: null });
   };
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    const newFiles = acceptedFiles.map((file) => {
-      const fileWithId = Object.assign(file, {
+    // For single image, only take the first file
+    const newFile = acceptedFiles[0];
+    if (newFile) {
+      const fileWithId = Object.assign(newFile, {
         id: Math.random().toString(36).substring(7),
-        preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
+        preview: newFile.type.startsWith('image/') ? URL.createObjectURL(newFile) : undefined,
       });
-      return fileWithId;
-    });
-    setFiles((prev) => [...prev, ...newFiles]);
+      setFiles([fileWithId]);
+    }
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'video/*': ['.mp4', '.mov', '.avi', '.mkv'],
-      'application/pdf': ['.pdf'],
       'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
     },
-    multiple: true,
+    multiple: false,
   });
 
   const removeFile = (fileId: string) => {
-    setFiles((prev) => prev.filter((file) => file.id !== fileId));
+    setFiles([]);
   };
 
   const getFileIcon = (file: File) => {
-    if (file.type.startsWith('video/')) return Video;
-    if (file.type === 'application/pdf') return FileText;
-    if (file.type.startsWith('image/')) return ImageIcon;
-    return File;
-  };
-
-  const addTag = () => {
-    if (currentTag.trim() && !metadata.tags.includes(currentTag.trim())) {
-      setMetadata(prev => ({
-        ...prev,
-        tags: [...prev.tags, currentTag.trim()]
-      }));
-      setCurrentTag("");
+    if (file.type.startsWith('image/')) {
+      return ImageIcon;
     }
-  };
-
-  const removeTag = (tagToRemove: string) => {
-    setMetadata(prev => ({
-      ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
-    }));
+    return File;
   };
 
   const handleUpload = async () => {
     if (files.length === 0) {
       toast({
-        title: "No files selected",
-        description: "Please select files to upload.",
+        title: "No image selected",
+        description: "Please select an image to upload.",
         variant: "destructive",
       });
       return;
     }
 
-    if (!metadata.title || !metadata.description || !metadata.category) {
+    if (!metadata.title || !metadata.description) {
       toast({
         title: "Missing information",
         description: "Please fill in all required fields.",
@@ -183,34 +130,30 @@ export default function Upload() {
     try {
       setFormLoading(true);
       
-      // Create FormData for file upload
       const formData = new FormData();
       formData.append('title', metadata.title);
       formData.append('description', metadata.description);
-      formData.append('category', metadata.category);
-      formData.append('tags', JSON.stringify(metadata.tags));
       
-      files.forEach((file) => {
-        formData.append('files', file);
-      });
+      if (files.length > 0) {
+        formData.append('image', files[0]);
+      }
 
-      // You'll need to add createBanner method to your apiService
       const response = await apiService.createBanner(formData);
       
       if (response.success) {
         toast({
-          title: "Upload successful",
-          description: "Banner has been uploaded successfully.",
+          title: "Success",
+          description: "Banner has been created successfully.",
         });
         setIsAddDialogOpen(false);
         resetForm();
-        fetchBanners(currentPage); // Refresh the list
+        fetchBanners(currentPage);
       }
     } catch (error) {
-      console.error('Error uploading banner:', error);
+      console.error('Error creating banner:', error);
       toast({
         title: "Upload failed",
-        description: "Failed to upload banner. Please try again.",
+        description: "Failed to create banner. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -218,26 +161,122 @@ export default function Upload() {
     }
   };
 
-  const openAddDialog = () => {
-    resetForm();
-    setIsAddDialogOpen(true);
+  const handleEditBanner = async () => {
+    if (!editingBanner) return;
+
+    if (!metadata.title || !metadata.description) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setFormLoading(true);
+      
+      const formData = new FormData();
+      formData.append('title', metadata.title);
+      formData.append('description', metadata.description);
+      
+      if (files.length > 0) {
+        formData.append('image', files[0]);
+      }
+
+      const response = await apiService.updateBanner(editingBanner._id, formData);
+      
+      if (response.success) {
+        toast({
+          title: "Success",
+          description: "Banner has been updated successfully.",
+        });
+        setIsEditDialogOpen(false);
+        setEditingBanner(null);
+        resetForm();
+        fetchBanners(currentPage);
+      }
+    } catch (error) {
+      console.error('Error updating banner:', error);
+      toast({
+        title: "Update failed",
+        description: "Failed to update banner. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleDeleteBanner = async (id: string) => {
+    try {
+      setDeleteLoading(true);
+      const response = await apiService.deleteBanner(id);
+
+      if (response.success) {
+        toast({
+          title: "Success",
+          description: response.message || "Banner deleted successfully",
+        });
+        fetchBanners(currentPage);
+      }
+    } catch (error) {
+      console.error('Error deleting banner:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete banner",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const openEditDialog = (banner: Banner) => {
+    setEditingBanner(banner);
+    setMetadata({
+      title: banner.title,
+      description: banner.description,
+      image: null,
+    });
+    setFiles([]);
+    setIsEditDialogOpen(true);
   };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
 
-  if (loading) {
-    return (
-      <Layout>
-        <div className="p-6 space-y-6">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
+  const handleToggleBlogPublish = async (id: string, currentStatus: boolean) => {
+    console.log("New publish status:", currentStatus); // <-- now will be true/false correctly
+    try {
+      // Optimistically update UI
+      setBanners((prevBanners) =>
+        prevBanners.map((b) =>
+          b._id === id ? { ...b, isPublished: currentStatus } : b
+        )
+      );
+  
+      // Call appropriate API
+      if (currentStatus) {
+        await apiService.unpublishBanner(id);
+        fetchBanners();
+      } else {
+        await apiService.publishBanner(id);
+        fetchBanners();
+      }
+    } catch (err) {
+      console.error("Error toggling publish:", err);
+  
+      // Revert if failed
+      setBanners((prevBanners) =>
+        prevBanners.map((b) =>
+          b._id === id ? { ...b, isPublished: !currentStatus } : b
+        )
+      );
+    }
+  };
+
 
   return (
     <Layout>
@@ -251,24 +290,27 @@ export default function Upload() {
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={openAddDialog}>
+              <Button onClick={() => {
+                resetForm();
+                setIsAddDialogOpen(true);
+              }}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Banner
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[900px] max-h-[85vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Upload Banner</DialogTitle>
+                <DialogTitle>Add New Banner</DialogTitle>
                 <DialogDescription>
-                  Upload new banner videos and images with metadata.
+                  Create a new banner. Fill in the details below.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-6 lg:grid-cols-2">
                 <Card>
                   <CardHeader>
-                    <CardTitle>File Upload</CardTitle>
+                    <CardTitle>Image Upload</CardTitle>
                     <CardDescription>
-                      Drag and drop files or click to browse. Supports videos (MP4, MOV) and images.
+                      Drag and drop an image or click to browse. Supports images only.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -282,14 +324,14 @@ export default function Upload() {
                     >
                       <input {...getInputProps()} />
                       {isDragActive ? (
-                        <p className="text-primary font-medium">Drop the files here ...</p>
+                        <p className="text-primary font-medium">Drop the image here ...</p>
                       ) : (
                         <div className="space-y-4">
                           <UploadIcon className="mx-auto h-12 w-12 text-muted-foreground" />
                           <div>
-                            <p className="text-lg font-medium">Drop files here or click to browse</p>
+                            <p className="text-lg font-medium">Drop image here or click to browse</p>
                             <p className="text-sm text-muted-foreground">
-                              Supports: MP4, MOV, AVI, MKV, PNG, JPG, JPEG, GIF, WEBP, PDF
+                              Supports: PNG, JPG, JPEG, GIF, WEBP
                             </p>
                           </div>
                         </div>
@@ -298,7 +340,7 @@ export default function Upload() {
 
                     {files.length > 0 && (
                       <div className="mt-6 space-y-3">
-                        <h3 className="font-medium">Uploaded Files ({files.length})</h3>
+                        <h3 className="font-medium">Selected Image</h3>
                         {files.map((file) => {
                           const Icon = getFileIcon(file);
                           return (
@@ -330,74 +372,36 @@ export default function Upload() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Content Details</CardTitle>
+                    <CardTitle>Banner Details</CardTitle>
                     <CardDescription>
-                      Add titles, descriptions, and your content.
+                      Add title, description, and select an image for your banner.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="title">Title</Label>
+                      <Label htmlFor="title">Title *</Label>
                       <Input
                         id="title"
-                        placeholder="Enter content title"
+                        placeholder="Enter banner title"
                         value={metadata.title}
                         onChange={(e) => setMetadata(prev => ({ ...prev, title: e.target.value }))}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="description">Description</Label>
+                      <Label htmlFor="description">Description *</Label>
                       <Textarea
                         id="description"
-                        placeholder="Describe your content"
+                        placeholder="Enter banner description"
                         value={metadata.description}
                         onChange={(e) => setMetadata(prev => ({ ...prev, description: e.target.value }))}
                         rows={3}
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="category">Category</Label>
-                      <Input
-                        id="category"
-                        placeholder="Enter category"
-                        value={metadata.category}
-                        onChange={(e) => setMetadata(prev => ({ ...prev, category: e.target.value }))}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="tags">Tags</Label>
-                      <div className="flex space-x-2">
-                        <Input
-                          id="tags"
-                          placeholder="Add tags"
-                          value={currentTag}
-                          onChange={(e) => setCurrentTag(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                        />
-                        <Button type="button" onClick={addTag} variant="outline">
-                          Add
-                        </Button>
-                      </div>
-                      {metadata.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {metadata.tags.map((tag) => (
-                            <Badge key={tag} variant="secondary" className="cursor-pointer">
-                              {tag}
-                              <X
-                                className="ml-1 h-3 w-3"
-                                onClick={() => removeTag(tag)}
-                              />
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
                     <Button onClick={handleUpload} className="w-full" disabled={files.length === 0 || formLoading}>
-                      {formLoading ? "Uploading..." : `Upload ${files.length > 0 ? `${files.length} file(s)` : ""}`}
+                      {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {formLoading ? "Creating..." : `Create Banner`}
                     </Button>
                   </CardContent>
                 </Card>
@@ -409,20 +413,137 @@ export default function Upload() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          {/* Edit Dialog */}
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent className="sm:max-w-[900px] max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Edit Banner</DialogTitle>
+                <DialogDescription>
+                  Edit the banner details below.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-6 lg:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Image Upload</CardTitle>
+                    <CardDescription>
+                      Drag and drop an image or click to browse. Supports images only.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div
+                      {...getRootProps()}
+                      className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+                        ${isDragActive 
+                          ? 'border-primary bg-primary/5' 
+                          : 'border-muted-foreground/25 hover:border-primary hover:bg-primary/5'
+                        }`}
+                    >
+                      <input {...getInputProps()} />
+                      {isDragActive ? (
+                        <p className="text-primary font-medium">Drop the image here ...</p>
+                      ) : (
+                        <div className="space-y-4">
+                          <UploadIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+                          <div>
+                            <p className="text-lg font-medium">Drop image here or click to browse</p>
+                            <p className="text-sm text-muted-foreground">
+                              Supports: PNG, JPG, JPEG, GIF, WEBP
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {files.length > 0 && (
+                      <div className="mt-6 space-y-3">
+                        <h3 className="font-medium">Selected Image</h3>
+                        {files.map((file) => {
+                          const Icon = getFileIcon(file);
+                          return (
+                            <div key={file.id} className="flex items-center justify-between p-3 border rounded-lg">
+                              <div className="flex items-center space-x-3">
+                                <Icon className="h-5 w-5 text-muted-foreground" />
+                                <div>
+                                  <p className="font-medium text-sm">{file.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {(file.size / 1024 / 1024).toFixed(2)} MB
+                                  </p>
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeFile(file.id)}
+                                className="h-8 w-8"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Banner Details</CardTitle>
+                    <CardDescription>
+                      Edit title, description, and select an image for your banner.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-title">Title *</Label>
+                      <Input
+                        id="edit-title"
+                        placeholder="Enter banner title"
+                        value={metadata.title}
+                        onChange={(e) => setMetadata(prev => ({ ...prev, title: e.target.value }))}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-description">Description *</Label>
+                      <Textarea
+                        id="edit-description"
+                        placeholder="Enter banner description"
+                        value={metadata.description}
+                        onChange={(e) => setMetadata(prev => ({ ...prev, description: e.target.value }))}
+                        rows={3}
+                      />
+                    </div>
+
+                    <Button onClick={handleEditBanner} className="w-full" disabled={formLoading}>
+                      {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {formLoading ? "Updating..." : `Update Banner`}
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Cancel
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <Card>
-        
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
                   <TableHead>Description</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Tags</TableHead>
-                  <TableHead>Files</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Image</TableHead>
+                  {/* <TableHead>Link</TableHead> */}
+                  {/* <TableHead>Status</TableHead> */}
+                  <TableHead>Published</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -439,48 +560,72 @@ export default function Upload() {
                     <TableRow key={banner._id}>
                       <TableCell className="font-medium">{banner.title}</TableCell>
                       <TableCell className="max-w-xs truncate">{banner.description}</TableCell>
-                      <TableCell>{banner.category}</TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {banner.tags.slice(0, 2).map((tag) => (
-                            <Badge key={tag} variant="secondary" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                          {banner.tags.length > 2 && (
-                            <Badge variant="secondary" className="text-xs">
-                              +{banner.tags.length - 2}
-                            </Badge>
-                          )}
-                        </div>
+                        <img src={banner.imageUrl} alt={banner.altText} className="w-16 h-16 object-cover rounded" />
                       </TableCell>
-                      <TableCell>{banner.files.length} files</TableCell>
+                      {/* <TableCell className="max-w-xs truncate">{banner.link}</TableCell> */}
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs ${
-                          banner.isActive
+                          banner.isPublished
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
                         }`}>
-                          {banner.isActive ? "Active" : "Inactive"}
+                          {banner.isPublished ? "Published" : "Draft"}
                         </span>
+                      </TableCell>
+                      <TableCell>
+                        {banner.publishedAt ? new Date(banner.publishedAt).toLocaleDateString() : 'Not published'}
                       </TableCell>
                       <TableCell>{formatDate(banner.createdAt)}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
+                        <Switch
+                            checked={banner.isPublished}
+                            onCheckedChange={(checked) => {
+                              const newStatus = checked ? 'published' : 'draft';
+                              handleToggleBlogPublish(banner.id, banner.isPublished);
+                            }}
+                            title={banner.isPublished ? 'Unpublish blog' : 'Publish blog'}
+                          />
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => {/* Handle edit */}}
+                            onClick={() => openEditDialog(banner)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {/* Handle delete */}}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure you want to delete this banner?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete the banner "{banner.title}".
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => handleDeleteBanner(banner._id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  disabled={deleteLoading}
+                                >
+                                  {deleteLoading ? (
+                                    <>
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      Deleting...
+                                    </>
+                                  ) : (
+                                    "Delete Banner"
+                                  )}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </TableCell>
                     </TableRow>
