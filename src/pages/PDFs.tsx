@@ -418,7 +418,12 @@ export default function PDFs() {
     }
   };
 
-
+  function formatCareerGuide(str) {
+    // Remove underscores and capitalize first letter
+    return str
+        .replace(/_/g, ' ')
+        .replace(/^\w/, firstChar => firstChar.toUpperCase());
+}
   return (
     <Layout>
       <div className="p-6 space-y-6">
@@ -470,9 +475,8 @@ export default function PDFs() {
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Study Materials">Study Materials</SelectItem>
-                        <SelectItem value="Reference">Reference</SelectItem>
-                        <SelectItem value="Lookbooks">Lookbooks</SelectItem>
+                      <SelectItem value="career_guide">Career Guide</SelectItem>
+                <SelectItem value="study_abroad">Study Abroad</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -526,10 +530,10 @@ export default function PDFs() {
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="Study Materials">Study Materials</SelectItem>
-                <SelectItem value="Reference">Reference</SelectItem>
-                <SelectItem value="Lookbooks">Lookbooks</SelectItem>
+                <SelectItem value="career_guide">Career Guide</SelectItem>
+                <SelectItem value="study_abroad">Study Abroad</SelectItem>
+                {/* <SelectItem value="Reference">Reference</SelectItem>
+                <SelectItem value="Lookbooks">Lookbooks</SelectItem> */}
               </SelectContent>
             </Select>
              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
@@ -568,7 +572,7 @@ export default function PDFs() {
                     <TableRow key={pdf._id}>
                       <TableCell className="font-medium">{pdf.name}</TableCell>
                       <TableCell className="max-w-xs truncate">{pdf.description}</TableCell>
-                      <TableCell>{pdf.category}</TableCell>
+                      <TableCell>{formatCareerGuide(pdf.category)}</TableCell>
                       <TableCell>{formatFileSize(pdf.fileSize)}</TableCell>
                       <TableCell>{pdf.downloadCount}</TableCell>
                       <TableCell>{pdf.uploadedBy.fullName}</TableCell>
@@ -685,9 +689,9 @@ export default function PDFs() {
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Study Materials">Study Materials</SelectItem>
-                      <SelectItem value="Reference">Reference</SelectItem>
-                      <SelectItem value="Lookbooks">Lookbooks</SelectItem>
+                      {/* <SelectItem value="all">All</SelectItem> */}
+                    <SelectItem value="career_guide">Career Guide</SelectItem>
+                    <SelectItem value="study_abroad">Study Abroad</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
