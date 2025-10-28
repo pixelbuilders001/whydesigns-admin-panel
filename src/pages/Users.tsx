@@ -21,7 +21,7 @@ const Users = () => {
       setLoading(true);
       setError(null);
 
-      const response = await apiService.getUsers(page, 5);
+      const response = await apiService.getUsers(page, 8);
 
       if (response.success && response.data) {
         setUsers(response.data);

@@ -35,6 +35,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { useToastAlert } from "@/components/AlertBox";
+// import { useToastAlert } from "@/components/useToastAlert";
 
 interface ReelItem {
   id: string;
@@ -63,6 +65,7 @@ interface FormData {
 }
 
 export default function Videos() {
+  const { showToast } = useToastAlert();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [reelToDelete, setReelToDelete] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -88,7 +91,7 @@ export default function Videos() {
   // Pagination state
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const limit = 12;
+  const limit = 10;
   const [loading, setLoading] = useState(false);
 
   const fetchReels = async (pageNumber = 1) => {
@@ -458,8 +461,13 @@ export default function Videos() {
                     size="icon"
                     variant="destructive"
                     onClick={() => {
-                      setReelToDelete(reel.id);
-                      setDeleteConfirmOpen(true);
+                      if(reel.isPublished){
+                        showToast("You can’t delete active or published items. Please make it inactive first.", "warning");
+                        return;
+                      }else{
+                          setReelToDelete(reel.id);
+                          setDeleteConfirmOpen(true);
+                      }
                     }}
                   >
                     <Trash2 className="h-5 w-5" />
@@ -494,7 +502,11 @@ export default function Videos() {
 
       {/* ADD MODAL */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent>
+        <DialogContent   className="w-[95%] max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl rounded-2xl"
+  style={{
+    maxHeight: "85vh",
+    overflowY: "auto",
+  }}>
           <DialogHeader>
             <DialogTitle>Create Video</DialogTitle>
           </DialogHeader>
@@ -595,7 +607,11 @@ export default function Videos() {
 
       {/* EDIT MODAL */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent>
+        <DialogContent  className="w-[95%] max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl rounded-2xl"
+  style={{
+    maxHeight: "85vh",
+    overflowY: "auto",
+  }}>
           <DialogHeader>
             <DialogTitle>Edit Video</DialogTitle>
           </DialogHeader>
@@ -737,19 +753,29 @@ export default function Videos() {
             <Button
               variant="destructive"
               onClick={async () => {
+                setIsSubmitting(true);
                 if (reelToDelete) {
                   try {
                     await apiService.deleteVideo(reelToDelete);
                     setDeleteConfirmOpen(false);
                     setReelToDelete(null);
                     fetchReels();
+                    setIsSubmitting(false);
                   } catch (err) {
+                    setIsSubmitting(false);
                     console.error("Delete failed:", err);
                   }
                 }
               }}
             >
-              Yes, Delete
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Yes, Delete"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

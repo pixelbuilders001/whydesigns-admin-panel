@@ -22,6 +22,9 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import apiService from "@/lib/api";
+
+
+
 import {
   Film,
   Play,
@@ -32,8 +35,10 @@ import {
   Eye,
   Heart,
   MessageCircle,
+  Loader2,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { useToastAlert } from "@/components/AlertBox";
 
 interface ReelItem {
   id: string;
@@ -61,9 +66,11 @@ interface FormData {
 }
 
 export default function Reels() {
+  const { showToast } = useToastAlert();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [reelToDelete, setReelToDelete] = useState<string | null>(null);
-
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  console.log("alertMessage", alertMessage);
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -419,8 +426,13 @@ export default function Reels() {
                     size="icon"
                     variant="destructive"
                     onClick={() => {
-                      setReelToDelete(reel.id);
-                      setDeleteConfirmOpen(true);
+                    if(reel.isPublished){
+                      showToast("You can’t delete active or published items. Please make it inactive first.", "warning");
+                      return;
+                    }else{
+                        setReelToDelete(reel.id);
+                        setDeleteConfirmOpen(true);
+                    }
                     }}
                   >
                     <Trash2 className="h-5 w-5" />
@@ -653,24 +665,36 @@ export default function Reels() {
             <Button
               variant="destructive"
               onClick={async () => {
+                setLoading(true);
                 if (reelToDelete) {
                   try {
                     await apiService.deleteReel(reelToDelete);
                     setDeleteConfirmOpen(false);
                     setReelToDelete(null);
+                    setLoading(false);
                     // refresh list after deletion
                     fetchReels();
                   } catch (err) {
+                    setLoading(false);
                     console.error("Delete failed:", err);
                   }
                 }
               }}
             >
-              Yes, Delete
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Yes, Delete"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+  
+
     </Layout>
   );
 }

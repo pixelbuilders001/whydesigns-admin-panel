@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash2, Eye, EyeOff, Users, User } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, Users, User, Loader2 } from "lucide-react";
 import apiService from "@/lib/api";
 import { Team } from "@/lib/api";
 import { Switch } from "@/components/ui/switch";
@@ -101,8 +101,9 @@ export default function Teams() {
       alert("Please fill in all required fields and select an image");
       return;
     }
-
+    setLoading(true);
     const submitFormData = new FormData();
+    
     submitFormData.append("name", formData.name);
     submitFormData.append("designation", formData.designation);
     submitFormData.append("description", formData.description);
@@ -110,9 +111,11 @@ export default function Teams() {
 
     try {
       await apiService.createTeam(submitFormData);
+      setLoading(false);
       setIsAddModalOpen(false);
       fetchTeams(page);
     } catch (error) {
+      setLoading(false)
       console.error("Error creating team member:", error);
       alert("Failed to create team member");
     }
@@ -134,11 +137,14 @@ export default function Teams() {
     }
 
     try {
+      setLoading(true);
       await apiService.updateTeam(editingTeam._id, submitFormData);
+      setLoading(false);
       setIsEditModalOpen(false);
       setEditingTeam(null);
       fetchTeams(page);
     } catch (error) {
+      setLoading(false);
       console.error("Error updating team member:", error);
       alert("Failed to update team member");
     }
@@ -148,9 +154,12 @@ export default function Teams() {
     if (!confirm("Are you sure you want to delete this team member?")) return;
 
     try {
+      setLoading(true);
       await apiService.deleteTeam(id);
       fetchTeams(page);
+      setLoading(false);
     } catch (error) {
+      setLoading(false);
       console.error("Error deleting team member:", error);
       alert("Failed to delete team member");
     }
@@ -380,7 +389,7 @@ export default function Teams() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Add Team Member</Button>
+                <Button type="submit"> {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />  : ""} Add Team Member</Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -486,7 +495,7 @@ export default function Teams() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Update Team Member</Button>
+                <Button type="submit"> {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> :null } Update Team Member</Button>
               </DialogFooter>
             </form>
           </DialogContent>

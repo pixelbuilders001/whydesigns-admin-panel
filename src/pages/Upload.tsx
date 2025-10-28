@@ -15,10 +15,13 @@ import { apiService } from "@/lib/api";
 import type { BannerData, CreateBannerResponse, BannersResponse } from "@/lib/api";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { Switch } from "@/components/ui/switch";
+import { useToastAlert } from "@/components/AlertBox";
+
 
 type Banner = BannerData;
 
 export default function Upload() {
+  const { showToast } = useToastAlert();
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [metadata, setMetadata] = useState({
     title: "",
@@ -209,6 +212,7 @@ export default function Upload() {
   };
 
   const handleDeleteBanner = async (id: string) => {
+
     try {
       setDeleteLoading(true);
       const response = await apiService.deleteBanner(id);
@@ -278,6 +282,17 @@ export default function Upload() {
   };
 
 
+  if (loading) {
+    return (
+      <Layout>
+        <div className="p-6 space-y-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
   return (
     <Layout>
       <div className="p-6 space-y-6">
@@ -610,7 +625,10 @@ export default function Upload() {
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction 
-                                  onClick={() => handleDeleteBanner(banner._id)}
+                                  onClick={() => {if(banner.isPublished){
+                                    showToast("You can’t delete active or published items. Please make it inactive first.", "warning");
+                      return;
+                                  }else{ handleDeleteBanner(banner._id)}}}
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   disabled={deleteLoading}
                                 >

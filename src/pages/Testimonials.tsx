@@ -34,7 +34,8 @@ import {
   Facebook,
   Instagram,
   Twitter,
-  Linkedin
+  Linkedin,
+  Loader2
 } from "lucide-react";
 import apiService from "@/lib/api";
 
@@ -217,6 +218,7 @@ console.log("tetetetete--",formData)
 const handleSubmitAdd = async (e: React.FormEvent) => {
   e.preventDefault();
   try {
+    setLoading(true)
     const payload = new FormData();
     payload.append("name", formData.name);
     payload.append("email",formData.email);
@@ -242,9 +244,11 @@ payload.append("socialMedia.linkedin", formData.socialMedia.linkedin || "");
     const res = await apiService.createTestimonial(payload); // make sure your backend accepts multipart/form-data
     fetchTestimonials();
     setIsAddModalOpen(false);
+    setLoading(false)
   } catch (err) {
     console.error(err);
     alert("Failed to add testimonial");
+    setLoading(false)
   }
 };
 
@@ -254,6 +258,7 @@ const handleSubmitEdit = async (e: React.FormEvent) => {
   if (!editingTestimonial) return;
 
   try {
+    setLoading(true)
     const payload = new FormData();
     payload.append("name", formData.name);
       payload.append("email",formData.email);
@@ -278,9 +283,11 @@ payload.append("socialMedia.linkedin", formData.socialMedia.linkedin || "");
     await apiService.updateTestimonial(editingTestimonial.id, payload);
     fetchTestimonials();
     setIsEditModalOpen(false);
+    setLoading(false)
   } catch (err) {
     console.error(err);
     alert("Failed to update testimonial");
+    setLoading(false)
   }
 };
 
@@ -634,7 +641,7 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
        <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
          Cancel
        </Button>
-       <Button type="submit">Add Testimonial</Button>
+       <Button type="submit">{loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Add Testimonial</Button>
      </DialogFooter>
    </form>
  </DialogContent>
@@ -825,7 +832,7 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
        <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
          Cancel
        </Button>
-       <Button type="submit">Update Testimonial</Button>
+       <Button type="submit">{loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Update Testimonial</Button>
      </DialogFooter>
    </form>
  </DialogContent>

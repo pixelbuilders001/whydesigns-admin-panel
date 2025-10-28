@@ -102,7 +102,7 @@ const Meetings = () => {
  const buildQueryParams = (page: number = 1) => {
   const params: Record<string, string> = {
     page: page.toString(),
-    limit: "10",
+    limit: "8",
 
   };
 
@@ -559,7 +559,7 @@ const Meetings = () => {
         </div>
 
         <div className="flex gap-4">
-          <div className="relative flex-1">
+          {/* <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               placeholder="Search by guest name, email, or topic..."
@@ -579,7 +579,7 @@ const Meetings = () => {
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
             <option value="expired">Expired</option>
-          </select>
+          </select> */}
            {/* <div className="grid gap-2">
                 <Label htmlFor="status">Status</Label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>

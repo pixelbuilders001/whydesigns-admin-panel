@@ -13,6 +13,8 @@ import { FileText, Search, Plus, Edit, Trash2, Download, Eye, Upload, Loader2 } 
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import { apiService } from "@/lib/api";
+import { useToastAlert } from "@/components/AlertBox";
+
 
 interface PDFMaterial {
   _id: string;
@@ -56,76 +58,16 @@ interface CreatePDFRequest {
   file: File;
 }
 
-const mockPDFs: PDFMaterial[] = [
-  {
-    _id: "1",
-    name: "Fashion Sketching Guide",
-    description: "Complete guide to technical fashion illustration and sketching techniques",
-    fileUrl: "https://example.com/fashion-sketching-guide.pdf",
-    fileName: "fashion-sketching-guide.pdf",
-    fileType: "application/pdf",
-    fileSize: 2400000,
-    category: "Study Materials",
-    tags: ["sketching", "illustration", "guide"],
-    uploadedBy: {
-      _id: "1",
-      name: "John Doe",
-      email: "john.doe@example.com"
-    },
-    downloadCount: 450,
-    isActive: true,
-    createdAt: "2024-01-15T14:30:00.000Z",
-    updatedAt: "2024-01-15T14:30:00.000Z"
-  },
-  {
-    _id: "2", 
-    name: "Fabric Encyclopedia",
-    description: "Comprehensive reference for different fabric types and their properties",
-    fileUrl: "https://example.com/fabric-encyclopedia.pdf",
-    fileName: "fabric-encyclopedia.pdf",
-    fileType: "application/pdf",
-    fileSize: 8700000,
-    category: "Reference",
-    tags: ["fabric", "reference", "materials"],
-    uploadedBy: {
-      _id: "1",
-      name: "John Doe",
-      email: "john.doe@example.com"
-    },
-    downloadCount: 320,
-    isActive: true,
-    createdAt: "2024-01-12T14:30:00.000Z",
-    updatedAt: "2024-01-12T14:30:00.000Z"
-  },
-  {
-    _id: "3",
-    name: "Spring Collection Lookbook",
-    description: "Complete lookbook featuring the latest spring fashion trends",
-    fileUrl: "https://example.com/spring-collection-lookbook.pdf",
-    fileName: "spring-collection-lookbook.pdf",
-    fileType: "application/pdf",
-    fileSize: 15200000,
-    category: "Lookbooks",
-    tags: ["spring", "lookbook", "trends"],
-    uploadedBy: {
-      _id: "1",
-      name: "John Doe",
-      email: "john.doe@example.com"
-    },
-    downloadCount: 890,
-    isActive: true,
-    createdAt: "2024-01-08T14:30:00.000Z",
-    updatedAt: "2024-01-08T14:30:00.000Z"
-  }
-];
+
 
 export default function PDFs() {
+  const { showToast } = useToastAlert();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingPDF, setEditingPDF] = useState<PDFMaterial | null>(null);
-  const [pdfs, setPdfs] = useState<PDFMaterial[]>(mockPDFs);
+  const [pdfs, setPdfs] = useState<PDFMaterial[]>([]);
   const [loading, setLoading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -154,7 +96,7 @@ export default function PDFs() {
       // Build query parameters
       const queryParams = new URLSearchParams();
       queryParams.append('page', String(page));
-      queryParams.append('limit', String(6));
+      queryParams.append('limit', String(8));
       if (searchTerm) {
         queryParams.append('name', searchTerm);  // Assuming the API uses 'name' for name-based search
       }
@@ -227,6 +169,7 @@ export default function PDFs() {
   };
 
   const confirmDeletePDF = async () => {
+    setFormLoading(true);
     if (pdfIdToDelete) {
       try {
         await apiService.deleteMaterial(pdfIdToDelete);
@@ -235,7 +178,9 @@ export default function PDFs() {
           description: "PDF deleted successfully",
         });
         fetchPDFs(currentPage);
+        setFormLoading(false);
       } catch (error) {
+        setFormLoading(false);
         console.error("Error deleting PDF:", error);
         toast({
           title: "Error",
@@ -243,6 +188,7 @@ export default function PDFs() {
           variant: "destructive",
         });
       } finally {
+        setFormLoading(false);
         setIsDeleteModalOpen(false);
         setPdfIdToDelete(null);
       }
@@ -608,7 +554,16 @@ export default function PDFs() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDeletePDF(pdf._id)}
+                            onClick={ ()=>{
+                              if(pdf.isPublished){
+                                showToast("You can’t delete active or published items. Please make it inactive first.", "warning");
+                                return;
+                              }else{
+                                handleDeletePDF(pdf._id)
+                              }
+                            }
+                              
+                              }
                             title="Delete PDF"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -744,6 +699,7 @@ export default function PDFs() {
               Cancel
             </Button>
             <Button type="button" variant="destructive" onClick={confirmDeletePDF}>
+              {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Delete
             </Button>
           </DialogFooter>

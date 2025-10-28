@@ -15,7 +15,8 @@ import {
   LogOut,
   BookOpen,
   Calendar,
-  UserCheck
+  UserCheck,
+  IdCard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -34,7 +35,7 @@ const navigation = [
   { name: "Blogs", href: "/blogs", icon: BookOpen },
   { name: "Meetings", href: "/meetings", icon: Calendar },
   { name: "Counselors", href: "/counselors", icon: Settings },
-  { name: "Team", href: "/team", icon: MessageSquare },
+  { name: "Team", href: "/team", icon: IdCard },
   { name: "Testimonials", href: "/testimonials", icon: MessageSquare },
   { name: "Settings", href: "/settings", icon: Settings },
 ];

@@ -13,8 +13,11 @@ import { useToast } from "@/hooks/use-toast";
 import { apiService } from "@/lib/api";
 import type { Blog, CreateBlogResponse, GetBlogsResponse, UpdateBlogResponse, DeleteBlogResponse } from "@/lib/api";
 import { Switch } from "@/components/ui/switch";
+import { useToastAlert } from "@/components/AlertBox";
+
 
 const Blogs = () => {
+  const { showToast } = useToastAlert();
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -178,10 +181,14 @@ const Blogs = () => {
     }
   };
 
-  const handleDeleteBlog = async (id: string) => {
+  const handleDeleteBlog = async (blog: any) => {
+    if(blog.status==='published'){
+      showToast("You can’t delete active or published items. Please make it inactive first.", "warning");
+      return;
+    }
     try {
       setDeleteLoading(true);
-      const response = await apiService.deleteBlog(id);
+      const response = await apiService.deleteBlog(blog.id);
 
       if (response.success) {
         toast({
@@ -307,7 +314,7 @@ const Blogs = () => {
                     placeholder="Enter blog title"
                   />
                 </div>
-                <div className="grid gap-2">
+                {/* <div className="grid gap-2">
                   <Label htmlFor="slug">Slug</Label>
                   <Input
                     id="slug"
@@ -315,7 +322,7 @@ const Blogs = () => {
                     onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                     placeholder="Enter blog slug"
                   />
-                </div>
+                </div> */}
                 <div className="grid gap-2">
                   <Label htmlFor="content">Content</Label>
                   <Textarea
@@ -326,7 +333,7 @@ const Blogs = () => {
                     rows={4}
                   />
                 </div>
-                <div className="grid gap-2">
+                {/* <div className="grid gap-2">
                   <Label htmlFor="excerpt">Excerpt</Label>
                   <Textarea
                     id="excerpt"
@@ -335,7 +342,7 @@ const Blogs = () => {
                     placeholder="Enter blog excerpt"
                     rows={2}
                   />
-                </div>
+                </div> */}
                 <div className="grid gap-2">
                   <Label htmlFor="featuredImage">Featured Image</Label>
                   <Input
@@ -466,7 +473,7 @@ const Blogs = () => {
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction 
-                                  onClick={() => handleDeleteBlog(blog._id)}
+                                  onClick={() => handleDeleteBlog(blog)}
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   disabled={deleteLoading}
                                 >
