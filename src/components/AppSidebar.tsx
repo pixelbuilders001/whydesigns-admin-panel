@@ -77,7 +77,10 @@ export function AppSidebar() {
       {/* Navigation - Scrollable */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
         {navigation.map((item) => {
-          const isActive = location.pathname === item.href;
+         const isActive =
+         item.href === "/"
+           ? location.pathname === "/"
+           : location.pathname.startsWith(item.href);
           return (
             <Link
               key={item.name}
