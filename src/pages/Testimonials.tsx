@@ -38,6 +38,7 @@ import {
   Loader2
 } from "lucide-react";
 import apiService from "@/lib/api";
+import { ImageCropModal } from "@/components/ImageCropModal";
 
 interface TestimonialItem {
   _id: string;
@@ -87,7 +88,8 @@ export default function Testimonials() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingTestimonial, setEditingTestimonial] = useState<TestimonialItem | null>(null);
-
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email:"",
@@ -469,13 +471,24 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
       id="profileImageAdd"
       className="hidden"
       onChange={(e) => {
-        const file = e.target.files?.[0] || null;
+        const file = e.target.files?.[0];
         if (file) {
-          setFormData({ ...formData, profileImage: file });
-        } else {
-          setFormData({ ...formData, profileImage: null });
+          const reader = new FileReader();
+          reader.onload = () => {
+            setTempImageSrc(reader.result as string);
+            setCropModalOpen(true);
+          };
+          reader.readAsDataURL(file);
         }
       }}
+      // onChange={(e) => {
+      //   const file = e.target.files?.[0] || null;
+      //   if (file) {
+      //     setFormData({ ...formData, profileImage: file });
+      //   } else {
+      //     setFormData({ ...formData, profileImage: null });
+      //   }
+      // }}
     />
     <label
       htmlFor="profileImageAdd"
@@ -664,9 +677,17 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
            accept="image/*"
            id="profileImageEdit"
            className="hidden"
-           onChange={(e) =>
-             setFormData({ ...formData, profileImage: e.target.files?.[0] || null })
-           }
+           onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = () => {
+                setTempImageSrc(reader.result as string);
+                setCropModalOpen(true);
+              };
+              reader.readAsDataURL(file);
+            }
+          }}
          />
          <label
            htmlFor="profileImageEdit"
@@ -837,7 +858,14 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
    </form>
  </DialogContent>
 </Dialog>
-
+<ImageCropModal
+  imageSrc={tempImageSrc}
+  open={cropModalOpen}
+  onClose={() => setCropModalOpen(false)}
+  onCropComplete={(croppedFile) => {
+    setFormData({ ...formData, profileImage: croppedFile });
+  }}
+/>
     </Layout>
   );
 }

@@ -8,11 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, X, Loader2 } from "lucide-react";
+import { Plus, Edit, Trash2, X, Loader2, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiService } from "@/lib/api";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { ImageCropModal } from "@/components/ImageCropModal";
 
 interface Counselor {
   _id: string;
@@ -77,12 +78,14 @@ const Counselors = () => {
     yearsOfExperience: 0,
     bio: "",
     specialties: [] as string[],
-    avatarUrl: "",
+    avatarFile: "",
     rating: 0,
     email: "",
     isActive: false,
 
   });
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
   console.log("formdat-----",formData)
   const [customTag, setCustomTag] = useState("");
   const { toast } = useToast();
@@ -240,7 +243,7 @@ const handleOpenDeleteDialog = (counselor: Counselor) => {
       yearsOfExperience: counselor.yearsOfExperience,
       bio: counselor.bio,
       specialties: counselor.specialties,
-      avatarUrl: counselor.avatarUrl || "",
+      avatarFile: counselor.avatarUrl || "",
       rating: counselor.rating,
       email: counselor.email,
       isActive: counselor.isActive,
@@ -436,6 +439,53 @@ const handleOpenDeleteDialog = (counselor: Counselor) => {
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
+              <div className="flex justify-center">
+                  <div className="relative w-32 h-32">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="avatarUrl"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            setTempImageSrc(reader.result as string);
+                            setCropModalOpen(true);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      // onChange={(e) => {
+                      //   const file = e.target.files?.[0] || null;
+                      //   if (file) {
+                      //     setFormData({ ...formData, image: file });
+                      //   } else {
+                      //     setFormData({ ...formData, image: null });
+                      //   }
+                      // }}
+                    />
+                    <label
+                      htmlFor="avatarUrl"
+                      className="cursor-pointer w-32 h-32 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden bg-gray-100 hover:border-gray-400 relative"
+                    >
+                      {formData.avatarFile ? (
+                        <img
+                          src={
+                            typeof formData.avatarFile === "string"
+                              ? formData.avatarFile
+                              : URL.createObjectURL(formData.avatarFile)
+                          }
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-12 h-12 text-gray-400" />
+                      )}
+                    </label>
+                  </div>
+                </div>
                 <div className="grid gap-2">
                   <Label htmlFor="fullName">Full Name *</Label>
                   <Input
@@ -495,16 +545,7 @@ const handleOpenDeleteDialog = (counselor: Counselor) => {
                     placeholder="e.g., 4.5"
                   />
                 </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="avatarUrl">Avatar</Label>
-                  <Input
-                    id="avatarUrl"
-                    type="file"
-                    onChange={(e) => setFormData({ ...formData, avatarFile: e.target.files?.[0] || null })}
-                    placeholder="Select avatar image file"
-                  />
-                </div>
+          
                 {renderTagsSection()}
               </div>
               <DialogFooter>
@@ -675,6 +716,53 @@ const handleOpenDeleteDialog = (counselor: Counselor) => {
              
             </DialogHeader>
             <div className="grid gap-4 py-4">
+            <div className="flex justify-center">
+                  <div className="relative w-32 h-32">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="avatarUrl"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            setTempImageSrc(reader.result as string);
+                            setCropModalOpen(true);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      // onChange={(e) => {
+                      //   const file = e.target.files?.[0] || null;
+                      //   if (file) {
+                      //     setFormData({ ...formData, image: file });
+                      //   } else {
+                      //     setFormData({ ...formData, image: null });
+                      //   }
+                      // }}
+                    />
+                    <label
+                      htmlFor="avatarUrl"
+                      className="cursor-pointer w-32 h-32 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden bg-gray-100 hover:border-gray-400 relative"
+                    >
+                      {formData.avatarFile ? (
+                        <img
+                          src={
+                            typeof formData.avatarFile === "string"
+                              ? formData.avatarFile
+                              : URL.createObjectURL(formData.avatarFile)
+                          }
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-12 h-12 text-gray-400" />
+                      )}
+                    </label>
+                  </div>
+                </div>
               <div className="grid gap-2">
                 <Label htmlFor="edit-fullName">Full Name *</Label>
                 <Input
@@ -735,15 +823,7 @@ const handleOpenDeleteDialog = (counselor: Counselor) => {
                   placeholder="e.g., 4.5"
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-avatarFile">Avatar</Label>
-                <Input
-                  id="edit-avatarFile"
-                  type="file"
-                  onChange={(e) => setFormData({ ...formData, avatarFile: e.target.files?.[0] || null })}
-                  placeholder="Select avatar image file"
-                />
-              </div>
+          
               <div className="grid gap-2">
                   <Label htmlFor="isActive">Active</Label>
                 
@@ -761,6 +841,14 @@ const handleOpenDeleteDialog = (counselor: Counselor) => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        <ImageCropModal
+  imageSrc={tempImageSrc}
+  open={cropModalOpen}
+  onClose={() => setCropModalOpen(false)}
+  onCropComplete={(croppedFile) => {
+    setFormData({ ...formData, avatarFile: croppedFile });
+  }}
+/>
       </div>
     </Layout>
   );

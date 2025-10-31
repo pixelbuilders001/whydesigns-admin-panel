@@ -25,6 +25,7 @@ import { Plus, Edit, Trash2, Eye, EyeOff, Users, User, Loader2 } from "lucide-re
 import apiService from "@/lib/api";
 import { Team } from "@/lib/api";
 import { Switch } from "@/components/ui/switch";
+import { ImageCropModal } from "@/components/ImageCropModal";
 
 interface TeamFormData {
   name: string;
@@ -40,6 +41,10 @@ export default function Teams() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
+
 
   const [formData, setFormData] = useState<TeamFormData>({
     name: "",
@@ -305,13 +310,24 @@ export default function Teams() {
                       id="profileImageAdd"
                       className="hidden"
                       onChange={(e) => {
-                        const file = e.target.files?.[0] || null;
+                        const file = e.target.files?.[0];
                         if (file) {
-                          setFormData({ ...formData, image: file });
-                        } else {
-                          setFormData({ ...formData, image: null });
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            setTempImageSrc(reader.result as string);
+                            setCropModalOpen(true);
+                          };
+                          reader.readAsDataURL(file);
                         }
                       }}
+                      // onChange={(e) => {
+                      //   const file = e.target.files?.[0] || null;
+                      //   if (file) {
+                      //     setFormData({ ...formData, image: file });
+                      //   } else {
+                      //     setFormData({ ...formData, image: null });
+                      //   }
+                      // }}
                     />
                     <label
                       htmlFor="profileImageAdd"
@@ -410,9 +426,20 @@ export default function Teams() {
            accept="image/*"
            id="profileImageEdit"
            className="hidden"
-           onChange={(e) =>
-             setFormData({ ...formData, image: e.target.files?.[0] || null })
-           }
+           onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = () => {
+                setTempImageSrc(reader.result as string);
+                setCropModalOpen(true);
+              };
+              reader.readAsDataURL(file);
+            }
+          }}
+          //  onChange={(e) =>
+          //    setFormData({ ...formData, image: e.target.files?.[0] || null })
+          //  }
          />
          <label
            htmlFor="profileImageEdit"
@@ -500,6 +527,14 @@ export default function Teams() {
             </form>
           </DialogContent>
         </Dialog>
+        <ImageCropModal
+  imageSrc={tempImageSrc}
+  open={cropModalOpen}
+  onClose={() => setCropModalOpen(false)}
+  onCropComplete={(croppedFile) => {
+    setFormData({ ...formData, image: croppedFile });
+  }}
+/>
       </div>
     </Layout>
   );

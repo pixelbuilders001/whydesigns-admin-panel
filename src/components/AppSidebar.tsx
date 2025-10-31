@@ -5,7 +5,6 @@ import {
   Upload,
   Video,
   FileText,
-  Image,
   Film,
   MessageSquare,
   Users,
@@ -16,7 +15,7 @@ import {
   BookOpen,
   Calendar,
   UserCheck,
-  IdCard
+  IdCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -29,8 +28,6 @@ const navigation = [
   { name: "Banner", href: "/upload", icon: Upload },
   { name: "Course Videos", href: "/videos", icon: Video },
   { name: "PDF Materials", href: "/pdfs", icon: FileText },
-
-  // { name: "Images", href: "/images", icon: Image },
   { name: "Reels", href: "/reels", icon: Film },
   { name: "Blogs", href: "/blogs", icon: BookOpen },
   { name: "Meetings", href: "/meetings", icon: Calendar },
@@ -55,27 +52,29 @@ export function AppSidebar() {
   return (
     <div
       className={cn(
-        "bg-sidebar border-r border-sidebar-border transition-all duration-300",
-        collapsed ? "w-16" : "w-64"
+        "relative flex flex-col h-screen backdrop-blur-xl bg-white/70 border-r border-gray-200 shadow-xl transition-all duration-300",
+        collapsed ? "w-20" : "w-64"
       )}
     >
-      <div className="flex h-16 items-center justify-between px-4">
+      {/* Header */}
+      <div className="flex h-16 items-center justify-between px-5 border-b border-gray-200 shrink-0">
         {!collapsed && (
-          <h1 className="text-lg font-semibold text-sidebar-foreground">
-          Whydesignerr Admin
+          <h1 className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">
+            Whydesignerr
           </h1>
         )}
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setCollapsed(!collapsed)}
-          className="text-sidebar-foreground hover:bg-sidebar-accent"
+          className="text-gray-600 hover:bg-gray-100"
         >
           {collapsed ? <Menu size={20} /> : <X size={20} />}
         </Button>
       </div>
-      
-      <nav className="px-2 py-4 space-y-1 overflow-y-auto max-h-[calc(100vh-200px)]">
+
+      {/* Navigation - Scrollable */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href;
           return (
@@ -83,38 +82,43 @@ export function AppSidebar() {
               key={item.name}
               to={item.href}
               className={cn(
-                "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                "group flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                 isActive
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md"
+                  : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
               )}
             >
-              <item.icon size={20} />
-              {!collapsed && <span className="ml-3">{item.name}</span>}
+              <item.icon
+                size={20}
+                className={cn(
+                  "transition-transform duration-200",
+                  isActive ? "scale-110" : "group-hover:scale-110"
+                )}
+              />
+              {!collapsed && <span>{item.name}</span>}
             </Link>
           );
         })}
       </nav>
 
-      <div className="px-2 py-4 border-t">
+      {/* User + Logout Section (Fixed at bottom) */}
+      <div className="border-t border-gray-200 px-3 py-5 space-y-3 shrink-0">
         {isAuthenticated && !collapsed && (
-          <div className="mb-3 p-3 bg-sidebar-accent rounded-md">
-            <div className="text-sm font-medium text-sidebar-foreground">
+          <div className="p-3 rounded-xl bg-gray-100/70">
+            <div className="text-sm font-semibold text-gray-800">
               {userName || "User"}
             </div>
-            <div className="text-xs text-sidebar-foreground/70 truncate">
+            <div className="text-xs text-gray-500 truncate">
               {userEmail}
             </div>
-            
           </div>
-        
         )}
 
         <Button
           variant="ghost"
           className={cn(
-            "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-            collapsed ? "px-3" : "px-3"
+            "w-full justify-start px-4 py-2.5 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200",
+            collapsed && "px-3 justify-center"
           )}
           onClick={handleLogout}
         >
@@ -122,6 +126,9 @@ export function AppSidebar() {
           {!collapsed && <span className="ml-3">Logout</span>}
         </Button>
       </div>
+
+      {/* Gradient Accent Glow */}
+      <div className="absolute right-0 top-0 h-full w-[3px] bg-gradient-to-b from-blue-600 to-purple-600 rounded-full" />
     </div>
   );
 }

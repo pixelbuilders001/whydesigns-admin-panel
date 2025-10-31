@@ -737,7 +737,7 @@ class ApiService {
   }
  
   async getCounselors(page: number = 1, limit: number = 10): Promise<CounselorsResponse> {
-    const url = `${this.baseURL}/api/v1/counselors?page=${page}&limit=${limit}`;
+    const url = `${this.baseURL}/api/v1/counselors?page=${page}&limit=${limit}&isActive=true`;
   
     const config: RequestInit = {
       method: 'GET',
