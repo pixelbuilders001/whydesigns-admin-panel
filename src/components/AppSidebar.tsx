@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth, useUser } from "@/contexts/AuthContext";
+import logo from "../assets/logo.png"
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -57,10 +58,10 @@ export function AppSidebar() {
       )}
     >
       {/* Header */}
-      <div className="flex h-16 items-center justify-between px-5 border-b border-gray-200 shrink-0">
+      <div className="flex h-12 items-center justify-between px-5 border-b border-gray-200 shrink-0">
         {!collapsed && (
-          <h1 className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">
-            Whydesignerr
+          <h1 className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text flex items-center gap-2">
+            <img src={logo} alt="logo" className="w-1/5" /> Whydesigns
           </h1>
         )}
         <Button

@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import logo from "../assets/logo.png"
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
@@ -127,15 +128,16 @@ const Login = () => {
       <div className="flex w-full max-w-5xl bg-white shadow-2xl rounded-2xl overflow-hidden">
         {/* Left Section - Illustration / Branding */}
         <div className="hidden md:flex w-1/2 bg-gradient-to-br from-blue-600 to-purple-600 text-white flex-col justify-center items-center p-10">
+        <img
+            src={logo}
+            alt="login illustration"
+            className="w-1/4 mt-8 animate-float"
+          />
           <h1 className="text-4xl font-bold mb-4">Welcome Back!</h1>
           <p className="text-center text-lg opacity-90">
             Manage your platform securely and efficiently.
           </p>
-          {/* <img
-            src="/assets/login-illustration.svg"
-            alt="login illustration"
-            className="w-3/4 mt-8 animate-float"
-          /> */}
+        
         </div>
 
         {/* Right Section - Login Form */}
