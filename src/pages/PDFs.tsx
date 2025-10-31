@@ -471,18 +471,17 @@ export default function PDFs() {
                 className="pl-8"
               />
             </div> */}
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            {/* <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="career_guide">Career Guide</SelectItem>
                 <SelectItem value="study_abroad">Study Abroad</SelectItem>
-                {/* <SelectItem value="Reference">Reference</SelectItem>
-                <SelectItem value="Lookbooks">Lookbooks</SelectItem> */}
+         
               </SelectContent>
-            </Select>
-             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            </Select> */}
+             {/* <Select value={selectedStatus} onValueChange={setSelectedStatus}>
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
@@ -491,7 +490,7 @@ export default function PDFs() {
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="inactive">Inactive</SelectItem>
             </SelectContent>
-          </Select>
+          </Select> */}
         </div>
       </div>
 

@@ -98,7 +98,7 @@ export default function Dashboard() {
         <SummaryCard title="Total Reels" value={reels.total} icon={Film} subtitle={`${reels.published} live`} />
         <SummaryCard title="Total Videos" value={videos.total} icon={Video} subtitle={`${videos.published} live`} />
         <SummaryCard title="Testimonials" value={testimonials.total} icon={MessageSquare} subtitle={`${testimonials.published} live`} />
-        <SummaryCard title="Leads" value={leads.total} icon={TrendingUp} subtitle={`${leads.active} active`} />
+        <SummaryCard title="Leads" value={leads.total} icon={TrendingUp} subtitle={`${leads.notContacted} not contacted`} />
         <SummaryCard title="Materials" value={materials.total} icon={Image} subtitle={`${materials.published} published`} />
         <SummaryCard title="Meetings" value={bookings.total} icon={BookOpen} subtitle={`${bookings.confirmed} confirmed`} />
         <SummaryCard title="Counselors" value={counselors.total} icon={Users} subtitle={`${counselors.active} active`} />
@@ -175,7 +175,7 @@ const SummaryCard = ({ title, value, icon: Icon, subtitle }: any) => (
       <div>
         <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{value}</h3>
-        <p className="text-xs text-green-500 dark:text-gray-400">{subtitle}</p>
+        <p className={title==="Leads"? "text-xs text-red-500 dark:text-gray-400" : "text-xs text-green-500 dark:text-gray-400"}>{subtitle}</p>
       </div>
       <Icon className="h-8 w-8 text-blue-500" />
     </CardContent>

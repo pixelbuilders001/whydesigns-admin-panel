@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -40,12 +41,14 @@ const navigation = [
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { userName, userEmail, isAuthenticated } = useUser();
 
   const handleLogout = () => {
+ 
     logout();
     navigate("/login");
   };
@@ -118,7 +121,38 @@ export function AppSidebar() {
           </div>
         )}
 
-        <Button
+        {/* Logout Button */}
+<Button
+  variant="ghost"
+  className={cn(
+    "w-full justify-start px-4 py-2.5 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200",
+    collapsed && "px-3 justify-center"
+  )}
+  onClick={() => setShowLogoutDialog(true)}
+>
+  <LogOut size={20} />
+  {!collapsed && <span className="ml-3">Logout</span>}
+</Button>
+
+{/* Logout Confirmation Dialog */}
+<Dialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+  <DialogContent className="max-w-sm">
+    <DialogHeader>
+      <DialogTitle>Are you sure you want to logout?</DialogTitle>
+    </DialogHeader>
+    <DialogFooter className="flex justify-end gap-3 mt-4">
+      <Button variant="secondary" onClick={() => setShowLogoutDialog(false)}>
+        Cancel
+      </Button>
+      <Button variant="destructive" onClick={handleLogout}>
+        Yes, Logout
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
+
+        {/* <Button
           variant="ghost"
           className={cn(
             "w-full justify-start px-4 py-2.5 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200",
@@ -128,7 +162,7 @@ export function AppSidebar() {
         >
           <LogOut size={20} />
           {!collapsed && <span className="ml-3">Logout</span>}
-        </Button>
+        </Button> */}
       </div>
 
       {/* Gradient Accent Glow */}
