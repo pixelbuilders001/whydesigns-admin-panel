@@ -2071,6 +2071,86 @@ async deleteLead(id: string): Promise<{ success: boolean; message: string }> {
     throw error;
   }
 }
+async getLeadActivities(leadId: string) {
+  const url = `${this.baseURL}/api/v1/leads/${leadId}/activities`;
+
+  const config: RequestInit = {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json',
+    ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+  },
+  };
+  
+  try {
+  const response = await fetch(url, config);
+  const data = await response.json();
+  
+  if (!response.ok) {
+    throw new Error(data.message || `HTTP error! status: ${response.status}`);
+  }
+  
+  return data;
+  } catch (error) {
+  console.error('API request failed:', error);
+  throw error;
+  }
+}
+
+async createLeadActivity(leadId: string, payload: any) {
+  const url = `${this.baseURL}/api/v1/leads/${leadId}/activities`;
+
+  const config: RequestInit = {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers: {
+      'Content-Type': 'application/json', // ✅ FIXED: tell server to expect JSON
+      ...(localStorage.getItem("userToken") && { 
+        Authorization: `Bearer ${localStorage.getItem("userToken")}` 
+      }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error creating lead activity:', error);
+    throw error;
+  }
+}
+
+async deleteLeadActivity(leadId: string, activityId: string) {
+  const url = `${this.baseURL}/api/v1/leads/${leadId}/activities/${activityId}`;
+  const config: RequestInit = {
+    method: 'DELETE',
+    headers: {
+      ...(localStorage.getItem("userToken") && {
+        Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+      }),
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error deleting lead activity:', error);
+    throw error;
+  }
+}
 
 
 
