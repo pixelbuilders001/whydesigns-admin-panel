@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { ImageCropModal } from "@/components/ImageCropModal";
 
 interface Counselor {
-  _id: string;
+  id: string;
   fullName: string;
   title: string;
   yearsOfExperience: number;
@@ -86,7 +86,7 @@ const Counselors = () => {
   });
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
-  console.log("formdat-----",formData)
+
   const [customTag, setCustomTag] = useState("");
   const { toast } = useToast();
 
@@ -171,7 +171,7 @@ const Counselors = () => {
       formDataToSend.append('title', formData.title);
       formDataToSend.append('yearsOfExperience', formData.yearsOfExperience.toString());
       formDataToSend.append('bio', formData.bio || '');
-      formDataToSend.append('isActive', 'false');
+      formDataToSend.append('isActive',formData.isActive.toString());
       formDataToSend.append('rating', formData.rating.toString());
       formDataToSend.append('email', formData.email);
 
@@ -235,7 +235,7 @@ const handleOpenDeleteDialog = (counselor: Counselor) => {
 
 };
   const openEditDialog = (counselor: Counselor) => {
-    console.log("formdat-----",counselor)
+  
     setEditingCounselor(counselor);
     setFormData({
       fullName: counselor.fullName,
@@ -599,7 +599,7 @@ const handleOpenDeleteDialog = (counselor: Counselor) => {
                 </TableHeader>
                 <TableBody>
                   {counselors.map((counselor) => (
-                    <TableRow key={counselor._id}>
+                    <TableRow key={counselor.id}>
                       <TableCell className="font-medium">{counselor.fullName}</TableCell>
                       <TableCell>{counselor.title}</TableCell>
                       <TableCell>{counselor.yearsOfExperience} years</TableCell>

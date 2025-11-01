@@ -79,7 +79,7 @@ export interface Author {
 }
 
 export interface Blog {
-  _id: string;
+  id: string;
   title: string;
   slug: string;
   content: string;
@@ -449,7 +449,7 @@ export interface TestimonialResponse {
   };
 }
 export interface Lead {
-  _id: string;
+  id: string;
   fullName: string;
   email: string;
   phone: string;
@@ -528,7 +528,7 @@ export interface LeadsResponse {
 }
 
 export interface BannerData {
-  _id: string;
+  id: string;
   title: string;
   description: string;
   imageUrl: string;
@@ -559,7 +559,7 @@ export interface BannersResponse {
   };
 }
 export interface Team {
-  _id: string;
+  id: string;
   name: string;
   designation: string;
   description: string;
@@ -737,6 +737,31 @@ class ApiService {
   }
  
   async getCounselors(page: number = 1, limit: number = 10): Promise<CounselorsResponse> {
+    const url = `${this.baseURL}/api/v1/counselors?page=${page}&limit=${limit}`;
+  
+    const config: RequestInit = {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
+      },
+    };
+  
+    try {
+      const response = await fetch(url, config);
+      const data = await response.json();
+  
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+      }
+  
+      return data;
+    } catch (error) {
+      console.error('API request failed:', error);
+      throw error;
+    }
+  }
+  async getCounselorsForMeetings(page: number = 1, limit: number = 10): Promise<CounselorsResponse> {
     const url = `${this.baseURL}/api/v1/counselors?page=${page}&limit=${limit}&isActive=true`;
   
     const config: RequestInit = {
@@ -761,7 +786,6 @@ class ApiService {
       throw error;
     }
   }
-
   async createCounselor(formData: FormData): Promise<CreateCounselorResponse> {
     const url = `${this.baseURL}/api/v1/counselors`;
 
@@ -1020,16 +1044,16 @@ async createMaterial(formData: FormData): Promise<CreatePDFResponse> {
     throw error;
   }
 }
-async updateMaterial(id: string, materialData: any): Promise<UpdatePDFResponse> {
+async updateMaterial(id: string, materialData: FormData): Promise<UpdatePDFResponse> {
     const url = `${this.baseURL}/api/v1/materials/${id}`;
 
     const config: RequestInit = {
         method: 'PATCH',
         headers: {
-            'Content-Type': 'application/json',
+           
             ...(localStorage.getItem("userToken") && { Authorization: `Bearer ${localStorage.getItem("userToken")}` }),
         },
-        body: JSON.stringify(materialData),
+        body: materialData,
     };
 
     try {

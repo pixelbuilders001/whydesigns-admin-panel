@@ -17,7 +17,7 @@ import { useToastAlert } from "@/components/AlertBox";
 
 
 interface PDFMaterial {
-  _id: string;
+  id: string;
   name: string;
   description: string;
   fileUrl: string;
@@ -28,7 +28,7 @@ interface PDFMaterial {
   tags: string[];
   isPublished: boolean;
   uploadedBy: {
-    _id: string;
+    id: string;
     name: string;
     email: string;
   };
@@ -268,10 +268,20 @@ export default function PDFs() {
         name: formData.name,
         description: formData.description,
         category: formData.category,
-        tags: formData.tags
+        tags: formData.tags,
+        file: formData.file
       };
+// console.log("updateData",updateData)
+const updateData1 = new FormData();
+updateData1.append('name', formData.name);
+updateData1.append('description', formData.description);
+updateData1.append('category', formData.category);
+updateData1.append('tags', JSON.stringify(formData.tags));
+updateData1.append('file', formData.file);
 
-      const response = await apiService.updateMaterial(editingPDF._id, updateData);
+
+
+      const response = await apiService.updateMaterial(editingPDF.id, updateData1);
       
       if (response.success) {
         toast({
@@ -335,12 +345,12 @@ export default function PDFs() {
   }
 
   const handleTogglePDF = async (id: string, currentStatus: boolean) => {
-    console.log("New publish status:", currentStatus); // <-- now will be true/false correctly
+  
     try {
       // Optimistically update UI
       setPdfs((prevPDFs) =>
         prevPDFs.map((p) =>
-          p._id === id ? { ...p, isPublished: currentStatus } : p
+          p.id === id ? { ...p, isPublished: currentStatus } : p
         )
       );
   
@@ -358,7 +368,7 @@ export default function PDFs() {
       // Revert if failed
       setPdfs((prevPDFs) =>
         prevPDFs.map((p) =>
-          p._id === id ? { ...p, isPublished: !currentStatus } : p
+          p.id === id ? { ...p, isPublished: !currentStatus } : p
         )
       );
     }
@@ -439,7 +449,8 @@ export default function PDFs() {
                     <Label htmlFor="tags">Tags (comma separated)</Label>
                     <Input
                       id="tags"
-                      value={formData.tags.join(", ")}
+                      
+                      value={formData?.tags?.join(", ")}
                       onChange={(e) => setFormData({ ...formData, tags: e.target.value.split(", ").filter(tag => tag) })}
                       placeholder="Enter tags separated by commas"
                     />
@@ -514,13 +525,13 @@ export default function PDFs() {
               </TableHeader>
               <TableBody>
                 {pdfs.map((pdf) => (
-                    <TableRow key={pdf._id}>
+                    <TableRow key={pdf.id}>
                       <TableCell className="font-medium">{pdf.name}</TableCell>
                       <TableCell className="max-w-xs truncate">{pdf.description}</TableCell>
                       <TableCell>{formatCareerGuide(pdf.category)}</TableCell>
                       <TableCell>{formatFileSize(pdf.fileSize)}</TableCell>
                       <TableCell>{pdf.downloadCount}</TableCell>
-                      <TableCell>{pdf.uploadedBy.fullName}</TableCell>
+                      <TableCell>{pdf.uploadedBy.name}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           pdf.isPublished
@@ -558,7 +569,7 @@ export default function PDFs() {
                                 showToast("You can’t delete active or published items. Please make it inactive first.", "warning");
                                 return;
                               }else{
-                                handleDeletePDF(pdf._id)
+                                handleDeletePDF(pdf.id)
                               }
                             }
                               
@@ -665,7 +676,8 @@ export default function PDFs() {
                   <Label htmlFor="edit-tags">Tags (comma separated)</Label>
                   <Input
                     id="edit-tags"
-                    value={formData.tags.join(", ")}
+                    disabled
+                    // value={formData.tags.join(", ")}
                     onChange={(e) => setFormData({ ...formData, tags: e.target.value.split(", ").filter(tag => tag) })}
                     placeholder="Enter tags separated by commas"
                   />

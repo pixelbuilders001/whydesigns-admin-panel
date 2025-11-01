@@ -34,7 +34,7 @@ export const useUser = () => {
     token,
     refreshToken,
     isLoggedIn: isAuthenticated,
-    userId: user?._id,
+    userId: user?.id,
     userEmail: user?.email,
     userName: user ? `${user.firstName} ${user.lastName}` : '',
     userRole: user?.roleId?.name,
@@ -113,7 +113,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
 
     try {
-      console.log("Refreshing token using API...");
+    
 
       const response: RefreshTokenResponse = await apiService.refreshToken({ refreshToken });
 
@@ -128,7 +128,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         localStorage.setItem("userToken", newToken);
         localStorage.setItem("refreshToken", newRefreshToken);
 
-        console.log("Token refreshed successfully");
+   
         return true;
       } else {
         console.error("Token refresh failed:", response.message);

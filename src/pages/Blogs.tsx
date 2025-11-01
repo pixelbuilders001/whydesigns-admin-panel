@@ -157,7 +157,7 @@ const Blogs = () => {
         submitData.append('featuredImage', formData.featuredImage);
       }
 
-      const response = await apiService.updateBlog(editingBlog._id, submitData);
+      const response = await apiService.updateBlog(editingBlog.id, submitData);
 
       if (response.success) {
         toast({
@@ -423,7 +423,7 @@ const Blogs = () => {
                 </TableHeader>
                 <TableBody>
                   {blogs.map((blog) => (
-                    <TableRow key={blog._id}>
+                    <TableRow key={blog.id}>
                       <TableCell className="font-medium">{blog.title}</TableCell>
                       <TableCell>{blog.authorId?.fullName || 'Unknown'}</TableCell>
                       <TableCell>

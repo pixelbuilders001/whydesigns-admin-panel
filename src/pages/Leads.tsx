@@ -40,7 +40,7 @@ import { MessageSquare, Trash2, List } from "lucide-react";
 import { apiService } from "@/lib/api";
 import type { Lead } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
-import { cn } from "@/lib/utils";
+import { cn, formatText } from "@/lib/utils";
 
 const Leads = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -110,7 +110,7 @@ const Leads = () => {
   const confirmDeleteLead = async () => {
     if (leadToDelete) {
       try {
-        await apiService.deleteLead(leadToDelete._id);
+        await apiService.deleteLead(leadToDelete.id);
         toast({
           title: "Success",
           description: "Lead deleted successfully",
@@ -141,9 +141,12 @@ const Leads = () => {
     setIsActivityModalOpen(true);
     setLoadingActivities(true);
     try {
-      const res = await apiService.getLeadActivities(lead._id);
+      const res = await apiService.getLeadActivities(lead.id);
       if (res.success && res.data) {
-        setActivities(res.data);
+        const sortedActivities = [...res.data].sort((a, b) => {
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+        setActivities(sortedActivities);
       } else {
         setActivities([]);
       }
@@ -183,7 +186,7 @@ const Leads = () => {
     try {
       setCreatingActivity(true);
       const res = await apiService.createLeadActivity(
-        selectedLead._id,
+        selectedLead.id,
         payload
       );
 
@@ -200,7 +203,8 @@ const Leads = () => {
         });
 
         // Refresh activity list
-        const updated = await apiService.getLeadActivities(selectedLead._id);
+        const updated = await apiService.getLeadActivities(selectedLead.id);
+        fetchLeads()
         setActivities(updated.data || []);
       } else {
         toast({
@@ -244,7 +248,7 @@ const Leads = () => {
       if (!confirmed) return;
 
       const res = await apiService.deleteLeadActivity(
-        selectedLead._id,
+        selectedLead.id,
         activityId
       );
 
@@ -254,7 +258,8 @@ const Leads = () => {
           description: "Activity removed successfully.",
         });
         // Refresh activities after deletion
-        const updated = await apiService.getLeadActivities(selectedLead._id);
+        const updated = await apiService.getLeadActivities(selectedLead.id);
+        fetchLeads()
         setActivities(updated.data || []);
       } else {
         toast({
@@ -317,7 +322,7 @@ const Leads = () => {
                   </TableRow>
                 ) : (
                   leads.map((lead) => (
-                    <TableRow key={lead._id}>
+                    <TableRow key={lead.id}>
                       <TableCell>{lead.fullName}</TableCell>
                       <TableCell>{lead.email}</TableCell>
                       <TableCell>{lead.phone || "N/A"}</TableCell>
@@ -357,13 +362,14 @@ const Leads = () => {
                         <span
                           className={cn(
                             "px-2 py-1 rounded-full text-xs font-semibold",
-                            lead.contacted
+                            lead.totalActivities > 0
                               ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100"
                               : "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100"
                           )}
                         >
-                          {lead.contacted ? "Contacted" : "Pending"}
-                        </span>
+                          {lead?.totalActivities===0?"Not Contacted" :  formatText(lead?.latestActivity?.activityType)}
+                        </span> <br />
+                        <span className="text-xs text-muted-foreground">{lead?.totalActivities===0? null :lead?.latestActivity?.counselorName}</span>
                       </TableCell>
                       <TableCell className="flex gap-2">
                         <Button
@@ -467,12 +473,12 @@ const Leads = () => {
                   ) : activities.length > 0 ? (
                     activities.map((act) => (
                       <div
-                        key={act._id}
+                        key={act.id}
                         className="p-4 rounded-xl border bg-white dark:bg-neutral-900 hover:shadow-md transition"
                       >
                         <div className="flex justify-end">
                         <button
-                          onClick={() => handleDeleteActivity(act._id)}
+                          onClick={() => handleDeleteActivity(act.id)}
                           className=" right-3 text-muted-foreground hover:text-destructive transition"
                           title="Delete activity"
                         >
@@ -485,7 +491,7 @@ const Leads = () => {
                             {act.activityType.replace("_", " ")}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            {formatDate(act.activityDate)}
+                            {formatDate(act.createdAt)}
                           </span>
                         </div>
                         <p className="text-sm text-muted-foreground mb-1">

@@ -143,7 +143,7 @@ const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
 
     try {
       setLoading(true);
-      await apiService.updateTeam(editingTeam._id, submitFormData);
+      await apiService.updateTeam(editingTeam.id, submitFormData);
       setLoading(false);
       setIsEditModalOpen(false);
       setEditingTeam(null);
@@ -230,7 +230,7 @@ const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {teams.map((team) => (
-              <Card key={team._id} className="relative">
+              <Card key={team.id} className="relative">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
                     <img
@@ -280,7 +280,7 @@ const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteTeam(team._id)}
+                        onClick={() => handleDeleteTeam(team.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

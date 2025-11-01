@@ -41,8 +41,7 @@ import apiService from "@/lib/api";
 import { ImageCropModal } from "@/components/ImageCropModal";
 
 interface TestimonialItem {
-  _id: string;
-  id:string;
+  id: string;
   name: string;
   title: string;
   content: string;
@@ -103,7 +102,7 @@ export default function Testimonials() {
     profileImage: null,
     socialMedia: { facebook: "", instagram: "", twitter: "", linkedin: "" },
   });
-console.log("tetetetete--",formData)
+
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -116,8 +115,7 @@ console.log("tetetetete--",formData)
     try {
       const res = await apiService.getTestimonials(pageNumber, 6);
       const formatted = res.data.testimonials.map((item: any) => ({
-        _id: item._id,
-        id:item.id,
+        id: item.id,
         name: item.name,
         email:  item.email,
         company: item.company,
@@ -187,7 +185,7 @@ console.log("tetetetete--",formData)
   };
 
   const handleEditTestimonial = (testimonial: TestimonialItem) => {
-    console.log("the data---",testimonial)
+
     setEditingTestimonial(testimonial);
     setFormData({
       name: testimonial.name,
@@ -206,7 +204,7 @@ console.log("tetetetete--",formData)
   };
 
   const handleDeleteTestimonial = async (id: string) => {
-    console.log("the test---",id)
+  
     // if (!window.confirm("Are you sure you want to delete this testimonial?")) return;
     try {
       await apiService.deleteTestimonial(id);
@@ -295,13 +293,13 @@ payload.append("socialMedia.linkedin", formData.socialMedia.linkedin || "");
 
 
 const handleTogglePublish = async (id: string, newStatus: boolean) => {
-  console.log("New publish status:", newStatus); // <-- now will be true/false correctly
+
 
   try {
     // Optimistically update UI
     setTestimonials((prevTestimonials) =>
       prevTestimonials.map((t) =>
-        t._id === id ? { ...t, isPublished: newStatus } : t
+        t.id === id ? { ...t, isPublished: newStatus } : t
       )
     );
 
@@ -319,7 +317,7 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
     // Revert if failed
     setTestimonials((prevTestimonials) =>
       prevTestimonials.map((t) =>
-        t._id === id ? { ...t, isPublished: !newStatus } : t
+        t.id === id ? { ...t, isPublished: !newStatus } : t
       )
     );
   }
@@ -345,7 +343,7 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
 
           {!loading &&
             testimonials.map((testimonial) => (
-              <Card key={testimonial._id} className={`${testimonial.featured ? "ring-2 ring-primary/20" : ""}`}>
+              <Card key={testimonial.id} className={`${testimonial.featured ? "ring-2 ring-primary/20" : ""}`}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3">
@@ -388,7 +386,7 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
                       <Button size="sm" variant="outline" onClick={() => handleEditTestimonial(testimonial)}>
                         <Edit className="h-3 w-3" />
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleDeleteTestimonial(testimonial._id)}>
+                      <Button size="sm" variant="outline" onClick={() => handleDeleteTestimonial(testimonial.id)}>
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>

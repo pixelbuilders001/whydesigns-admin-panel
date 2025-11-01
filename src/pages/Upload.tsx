@@ -187,7 +187,7 @@ export default function Upload() {
         formData.append('image', files[0]);
       }
 
-      const response = await apiService.updateBanner(editingBanner._id, formData);
+      const response = await apiService.updateBanner(editingBanner.id, formData);
       
       if (response.success) {
         toast({
@@ -252,12 +252,12 @@ export default function Upload() {
   };
 
   const handleToggleBlogPublish = async (id: string, currentStatus: boolean) => {
-    console.log("New publish status:", currentStatus); // <-- now will be true/false correctly
+
     try {
       // Optimistically update UI
       setBanners((prevBanners) =>
         prevBanners.map((b) =>
-          b._id === id ? { ...b, isPublished: currentStatus } : b
+          b.id === id ? { ...b, isPublished: currentStatus } : b
         )
       );
   
@@ -275,7 +275,7 @@ export default function Upload() {
       // Revert if failed
       setBanners((prevBanners) =>
         prevBanners.map((b) =>
-          b._id === id ? { ...b, isPublished: !currentStatus } : b
+          b.id === id ? { ...b, isPublished: !currentStatus } : b
         )
       );
     }
@@ -572,7 +572,7 @@ export default function Upload() {
                   </TableRow>
                 ) : (
                   banners.map((banner) => (
-                    <TableRow key={banner._id}>
+                    <TableRow key={banner.id}>
                       <TableCell className="font-medium">{banner.title}</TableCell>
                       <TableCell className="max-w-xs truncate">{banner.description}</TableCell>
                       <TableCell>
@@ -628,7 +628,7 @@ export default function Upload() {
                                   onClick={() => {if(banner.isPublished){
                                     showToast("You can’t delete active or published items. Please make it inactive first.", "warning");
                       return;
-                                  }else{ handleDeleteBanner(banner._id)}}}
+                                  }else{ handleDeleteBanner(banner.id)}}}
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   disabled={deleteLoading}
                                 >

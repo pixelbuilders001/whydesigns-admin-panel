@@ -70,7 +70,7 @@ export default function Reels() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [reelToDelete, setReelToDelete] = useState<string | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
-  console.log("alertMessage", alertMessage);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -88,6 +88,7 @@ export default function Reels() {
 
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -172,7 +173,7 @@ export default function Reels() {
       console.error("Delete reel error:", error);
     }
   };
-  console.log("the form", formData);
+
   const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -222,6 +223,7 @@ export default function Reels() {
 
   // Create new reel
   const handleSubmitAdd = async (e: React.FormEvent) => {
+    setIsSubmitting(true);
     e.preventDefault();
     if (!formData.title || !formData.caption || !formData.video) {
       alert("Please fill all required fields and upload a video");
@@ -243,18 +245,23 @@ export default function Reels() {
     if (formData.fileSize) data.append("fileSize", String(formData.fileSize));
 
     try {
+      setIsSubmitting(true);
       const response = await apiService.createReel(data);
+      setIsSubmitting(false);
       if (response.success && response.data) {
+        setIsSubmitting(false);
         fetchReels();
         setIsAddModalOpen(false);
       }
     } catch (error) {
+      setIsSubmitting(false);
       console.error("Create reel error:", error);
     }
   };
 
   // Update reel (supports video update)
   const handleSubmitEdit = async (e: React.FormEvent) => {
+    setIsSubmitting(true);
     e.preventDefault();
     if (!editingReel) return;
 
@@ -276,25 +283,28 @@ export default function Reels() {
       data.append("thumbnail", formData.thumbnail); // ✅ NEW
     }
     try {
+      setIsSubmitting(true);
       const response = await apiService.updateReel(editingReel.id, data);
       if (response.success && response.data) {
+        setIsSubmitting(false);
         fetchReels();
         setIsEditModalOpen(false);
         setEditingReel(null);
       }
     } catch (error) {
+      setIsSubmitting(false);
       console.error("Update reel error:", error);
     }
   };
 
   const handleTogglePublish = async (id: string, newStatus: boolean) => {
-    console.log("New publish status:", newStatus); // <-- now will be true/false correctly
+
 
     try {
       // Optimistically update UI
       setReels((prevReels) =>
         prevReels.map((r) =>
-          r._id === id ? { ...r, isPublished: newStatus } : r
+          r.id === id ? { ...r, isPublished: newStatus } : r
         )
       );
 
@@ -312,7 +322,7 @@ export default function Reels() {
       // Revert if failed
       setReels((prevReels) =>
         prevReels.map((r) =>
-          r._id === id ? { ...r, isPublished: !newStatus } : r
+          r.id === id ? { ...r, isPublished: !newStatus } : r
         )
       );
     }
@@ -542,7 +552,16 @@ export default function Reels() {
   )} */}
             </div>
             <DialogFooter>
-              <Button type="submit">Upload Reel</Button>
+            <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  "Upload Reel"
+                )}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -612,7 +631,16 @@ export default function Reels() {
   )} */}
             </div>
             <DialogFooter>
-              <Button type="submit">Save Changes</Button>
+            <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  "Update Video"
+                )}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

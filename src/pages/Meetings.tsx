@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiService } from "@/lib/api";
 
 interface Booking {
-  _id: string;
+  id: string;
   counselorId: string;
   guestName: string;
   guestEmail: string;
@@ -34,7 +34,7 @@ interface Booking {
   isPast: boolean;
   id: string;
   counselor?: {
-    _id: string;
+    id: string;
     fullName: string;
     title: string;
     avatarUrl?: string;
@@ -54,7 +54,7 @@ interface BookingsResponse {
 }
 
 interface Counselor {
-  _id: string;
+  id: string;
   fullName: string;
   title: string;
   yearsOfExperience: number;
@@ -150,7 +150,7 @@ const Meetings = () => {
   // Fetch counselors from API
   const fetchCounselors = async () => {
     try {
-      const response: CounselorsResponse = await apiService.getCounselors(1, 100);
+      const response: CounselorsResponse = await apiService.getCounselorsForMeetings(1, 100);
       if (response.success) {
         setCounselors(response.data);
       }
@@ -248,7 +248,7 @@ const Meetings = () => {
 
     try {
       setFormLoading(true);
-      const response = await apiService.updateBooking(editingBooking._id, {
+      const response = await apiService.updateBooking(editingBooking.id, {
         counselorId: formData.counselorId,
         guestName: formData.guestName,
         guestEmail: formData.guestEmail,
@@ -358,7 +358,7 @@ const Meetings = () => {
   };
 
   const getCounselorName = (counselorId: string) => {
-    const counselor = counselors.find(c => c._id === counselorId);
+    const counselor = counselors.find(c => c.id === counselorId);
     return counselor ? counselor.fullName : "Unknown Counselor";
   };
 
@@ -384,7 +384,7 @@ const Meetings = () => {
 
     try {
       setFormLoading(true);
-      await apiService.confirmBooking(approvingBooking._id, meetingLinkInput.trim());
+      await apiService.confirmBooking(approvingBooking.id, meetingLinkInput.trim());
       
       toast({
         title: "Success",
@@ -444,7 +444,7 @@ const Meetings = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {counselors.map((counselor) => (
-                        <SelectItem key={counselor._id} value={counselor._id}>
+                        <SelectItem key={counselor.id} value={counselor.id}>
                           {counselor.fullName} - {counselor.title}
                         </SelectItem>
                       ))}
@@ -627,7 +627,7 @@ const Meetings = () => {
                 </TableHeader>
                 <TableBody>
                   {bookings.map((booking) => (
-                    <TableRow key={booking._id}>
+                    <TableRow key={booking.id}>
                       <TableCell>
                         <div>
                           <div className="font-medium">{booking.guestName}</div>
@@ -761,7 +761,7 @@ const Meetings = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {counselors.map((counselor) => (
-                      <SelectItem key={counselor._id} value={counselor._id}>
+                      <SelectItem key={counselor.id} value={counselor.id}>
                         {counselor.fullName} - {counselor.title}
                       </SelectItem>
                     ))}

@@ -45,3 +45,12 @@ export const getCroppedImg = async (imageSrc: string, crop: any, zoom: number = 
   });
 };
 
+export function formatText(str: string) {
+  if (!str || typeof str !== 'string') return str;
+  
+  // Replace underscores with spaces and capitalize first letter
+  return str
+      .replace(/_/g, ' ')
+      .replace(/^\w/, char => char.toUpperCase());
+}
+

@@ -19,7 +19,8 @@ import {
   Globe,
   Mail,
   Key,
-  Download
+  Download,
+  Loader2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 // import { Button } from "@/components/ui/button";
@@ -175,7 +176,7 @@ export default function Settings() {
                   </Alert>
                 )} */}
              
-                <Button onClick={handleSubmit}>Change Password</Button>
+                <Button onClick={handleSubmit}>{loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : ""} Change Password</Button>
               </CardContent>
             </Card>
           </div>

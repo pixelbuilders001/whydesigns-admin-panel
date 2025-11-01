@@ -333,7 +333,7 @@ export default function Videos() {
   };
 
   const handleTogglePublish = async (id: string, newStatus: boolean) => {
-    console.log("New publish status:", newStatus);
+
 
     try {
       setReels((prevReels) =>
