@@ -143,10 +143,10 @@ const Leads = () => {
     try {
       const res = await apiService.getLeadActivities(lead.id);
       if (res.success && res.data) {
-        const sortedActivities = [...res.data].sort((a, b) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        });
-        setActivities(sortedActivities);
+        // const sortedActivities = [...res.data].sort((a, b) => {
+        //   return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        // });
+        setActivities(res.data);
       } else {
         setActivities([]);
       }
@@ -162,15 +162,20 @@ const Leads = () => {
   const handleCreateActivity = async () => {
     if (!selectedLead) return;
 
-    // ✅ Create a clean payload (omit empty nextFollowUpDate)
+    // 🕐 Convert YYYY-MM-DD → ISO 8601 (UTC format)
+    const toISODate = (dateStr: string) => {
+      if (!dateStr) return "";
+      return new Date(dateStr + "T00:00:00Z").toISOString();
+    };
+  
     const payload: any = {
       activityType: newActivity.activityType,
       remarks: newActivity.remarks,
-      activityDate: newActivity.activityDate,
+      activityDate: toISODate(newActivity.activityDate), // ✅ converted
     };
-
+  
     if (newActivity.nextFollowUpDate) {
-      payload.nextFollowUpDate = newActivity.nextFollowUpDate;
+      payload.nextFollowUpDate = toISODate(newActivity.nextFollowUpDate); // ✅ converted
     }
 
     // ✅ Basic validation
@@ -499,14 +504,14 @@ const Leads = () => {
                         </p>
                      
                         <div className="flex justify-between items-center">
-                        {act.nextFollowUpDate && (
+                        {act.nextFollowUpDate ? (
                           <p className="text-xs text-blue-600 dark:text-blue-300">
                             Next follow-up: {formatDate(act.nextFollowUpDate)}
                           </p>
-                        )}
-                        {act.counselorId && (
+                        ) : <p></p>}
+                        {act.counselor && (
                           <p className="text-xs text-blue-600 dark:text-blue-300">
-                            Counselor: {act.counselorId.firstName}
+                            Counselor: {act.counselor.name}
                           </p>
                         )}
                         </div>

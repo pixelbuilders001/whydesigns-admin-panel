@@ -640,7 +640,7 @@ const Meetings = () => {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-muted-foreground" />
-                          {booking.counselorId===null?'N.A':booking.counselorId.fullName}
+                          {booking.counselor===null?'N.A':booking.counselor.name}
                           {/* {booking.counselorId.fullName} */}
                         </div>
                       </TableCell>
