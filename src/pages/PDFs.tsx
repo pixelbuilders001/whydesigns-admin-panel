@@ -677,7 +677,7 @@ updateData1.append('file', formData.file);
                   <Input
                     id="edit-tags"
                     disabled
-                    // value={formData.tags.join(", ")}
+                    value={formData.tags.join(", ")}
                     onChange={(e) => setFormData({ ...formData, tags: e.target.value.split(", ").filter(tag => tag) })}
                     placeholder="Enter tags separated by commas"
                   />

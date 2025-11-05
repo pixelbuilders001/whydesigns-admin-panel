@@ -198,7 +198,7 @@ const Login = () => {
                     {isLoading ? "Signing in..." : "Login"}
                   </Button>
                 </div>
-
+{/* 
                 <p className="text-sm text-center mt-3">
                   <button
                     type="button"
@@ -207,7 +207,7 @@ const Login = () => {
                   >
                     Forgot Password?
                   </button>
-                </p>
+                </p> */}
               </form>
             </CardContent>
           </Card>
