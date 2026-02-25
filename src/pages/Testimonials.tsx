@@ -53,6 +53,7 @@ interface TestimonialItem {
   hasVideo: boolean;
   profileImage?: string | File | null;
   isPublished: boolean;
+  state: string;
   socialMedia: {
     facebook: string;
     instagram: string;
@@ -69,7 +70,8 @@ interface FormData {
   featured: boolean;
   hasVideo: boolean;
   email?: string;
-  company:string;
+  company: string;
+  state: string;
   socialMedia?: {
     facebook?: string;
     instagram?: string;
@@ -78,6 +80,12 @@ interface FormData {
   };
   profileImage?: File | string; // File during editing/adding, string if coming from API
 }
+
+const CATEGORY_LABELS: Record<string, string> = {
+  nift_india: "NIFT India",
+  study_fashion_abroad: "Study Fashion Abroad",
+  certification_course: "Certification Course",
+};
 
 export default function Testimonials() {
   const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);
@@ -91,12 +99,13 @@ export default function Testimonials() {
   const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
     name: "",
-    email:"",
+    email: "",
     title: "",
     content: "",
     rating: 5,
-    company:"",
+    company: "",
     course: "",
+    state: "",
     featured: false,
     hasVideo: false,
     profileImage: null,
@@ -117,7 +126,7 @@ export default function Testimonials() {
       const formatted = res.data.testimonials.map((item: any) => ({
         id: item.id,
         name: item.name,
-        email:  item.email,
+        email: item.email,
         company: item.company,
         title: item.designation || "",
         content: item.message,
@@ -128,6 +137,7 @@ export default function Testimonials() {
         hasVideo: false,
         isActive: item.isActive,
         isPublished: item.isPublished,
+        state: item.state || "",
         socialMedia: {
           facebook: item.socialMedia?.facebook || "",
           instagram: item.socialMedia?.instagram || "",
@@ -174,10 +184,11 @@ export default function Testimonials() {
       content: "",
       rating: 5,
       course: "",
-      email:"",
-      company:"",
+      email: "",
+      company: "",
       featured: false,
       hasVideo: false,
+      state: "",
       profileImage: null,
       socialMedia: { facebook: "", instagram: "", twitter: "", linkedin: "" },
     });
@@ -190,13 +201,14 @@ export default function Testimonials() {
     setFormData({
       name: testimonial.name,
       title: testimonial.title,
-      email:testimonial.email,
-      company:testimonial.company,
+      email: testimonial.email,
+      company: testimonial.company,
       content: testimonial.content,
       rating: testimonial.rating,
       course: testimonial.course,
       featured: testimonial.featured,
       hasVideo: testimonial.hasVideo,
+      state: testimonial.state || "",
       profileImage: testimonial.profileImage || null,
       socialMedia: { ...testimonial.socialMedia },
     });
@@ -204,7 +216,7 @@ export default function Testimonials() {
   };
 
   const handleDeleteTestimonial = async (id: string) => {
-  
+
     // if (!window.confirm("Are you sure you want to delete this testimonial?")) return;
     try {
       await apiService.deleteTestimonial(id);
@@ -215,113 +227,115 @@ export default function Testimonials() {
     }
   };
 
-const handleSubmitAdd = async (e: React.FormEvent) => {
-  e.preventDefault();
-  try {
-    setLoading(true)
-    const payload = new FormData();
-    payload.append("name", formData.name);
-    payload.append("email",formData.email);
-    payload.append("designation", formData.title);
-    payload.append("message", formData.content);
-    payload.append("rating", formData.rating.toString());
-    payload.append("company", formData.company);
-    payload.append("isFavorite", formData.featured.toString());
-    payload.append("isActive", "true");
+  const handleSubmitAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setLoading(true)
+      const payload = new FormData();
+      payload.append("name", formData.name);
+      payload.append("email", formData.email);
+      payload.append("designation", formData.title);
+      payload.append("message", formData.content);
+      payload.append("rating", formData.rating.toString());
+      payload.append("company", formData.company);
+      payload.append("isFavorite", formData.featured.toString());
+      payload.append("isActive", "true");
+      payload.append("state", formData.state);
 
-    if (formData.profileImage) {
-      payload.append("profileImage", formData.profileImage);
-    }
+      if (formData.profileImage) {
+        payload.append("profileImage", formData.profileImage);
+      }
 
-    if (formData.socialMedia) {
-    payload.append("socialMedia.facebook", formData.socialMedia.facebook || "");
-payload.append("socialMedia.instagram", formData.socialMedia.instagram || "");
-payload.append("socialMedia.twitter", formData.socialMedia.twitter || "");
-payload.append("socialMedia.linkedin", formData.socialMedia.linkedin || "");
+      if (formData.socialMedia) {
+        payload.append("socialMedia.facebook", formData.socialMedia.facebook || "");
+        payload.append("socialMedia.instagram", formData.socialMedia.instagram || "");
+        payload.append("socialMedia.twitter", formData.socialMedia.twitter || "");
+        payload.append("socialMedia.linkedin", formData.socialMedia.linkedin || "");
 
-    }
+      }
 
-    const res = await apiService.createTestimonial(payload); // make sure your backend accepts multipart/form-data
-    fetchTestimonials();
-    setIsAddModalOpen(false);
-    setLoading(false)
-  } catch (err) {
-    console.error(err);
-    alert("Failed to add testimonial");
-    setLoading(false)
-  }
-};
-
-
-const handleSubmitEdit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!editingTestimonial) return;
-
-  try {
-    setLoading(true)
-    const payload = new FormData();
-    payload.append("name", formData.name);
-      payload.append("email",formData.email);
-    payload.append("designation", formData.title);
-    payload.append("message", formData.content);
-    payload.append("rating", formData.rating.toString());
-    payload.append("company", formData.company);
-    payload.append("isFavorite", formData.featured.toString());
-
-    if (formData.profileImage && typeof formData.profileImage !== "string") {
-      payload.append("profileImage", formData.profileImage);
-    }
-
-    if (formData.socialMedia) {
-    payload.append("socialMedia.facebook", formData.socialMedia.facebook || "");
-payload.append("socialMedia.instagram", formData.socialMedia.instagram || "");
-payload.append("socialMedia.twitter", formData.socialMedia.twitter || "");
-payload.append("socialMedia.linkedin", formData.socialMedia.linkedin || "");
-
-    }
-
-    await apiService.updateTestimonial(editingTestimonial.id, payload);
-    fetchTestimonials();
-    setIsEditModalOpen(false);
-    setLoading(false)
-  } catch (err) {
-    console.error(err);
-    alert("Failed to update testimonial");
-    setLoading(false)
-  }
-};
-
-
-const handleTogglePublish = async (id: string, newStatus: boolean) => {
-
-
-  try {
-    // Optimistically update UI
-    setTestimonials((prevTestimonials) =>
-      prevTestimonials.map((t) =>
-        t.id === id ? { ...t, isPublished: newStatus } : t
-      )
-    );
-
-    // Call appropriate API
-    if (newStatus) {
-      await apiService.publishTestimonial(id);
+      const res = await apiService.createTestimonial(payload); // make sure your backend accepts multipart/form-data
       fetchTestimonials();
-    } else {
-      await apiService.unpublishTestimonial(id);
-      fetchTestimonials();
+      setIsAddModalOpen(false);
+      setLoading(false)
+    } catch (err) {
+      console.error(err);
+      alert("Failed to add testimonial");
+      setLoading(false)
     }
-  } catch (err) {
-    console.error("Error toggling publish:", err);
+  };
 
-    // Revert if failed
-    setTestimonials((prevTestimonials) =>
-      prevTestimonials.map((t) =>
-        t.id === id ? { ...t, isPublished: !newStatus } : t
-      )
-    );
-  }
-};
+
+  const handleSubmitEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTestimonial) return;
+
+    try {
+      setLoading(true)
+      const payload = new FormData();
+      payload.append("name", formData.name);
+      payload.append("email", formData.email);
+      payload.append("designation", formData.title);
+      payload.append("message", formData.content);
+      payload.append("rating", formData.rating.toString());
+      payload.append("company", formData.company);
+      payload.append("isFavorite", formData.featured.toString());
+      payload.append("state", formData.state);
+
+      if (formData.profileImage && typeof formData.profileImage !== "string") {
+        payload.append("profileImage", formData.profileImage);
+      }
+
+      if (formData.socialMedia) {
+        payload.append("socialMedia.facebook", formData.socialMedia.facebook || "");
+        payload.append("socialMedia.instagram", formData.socialMedia.instagram || "");
+        payload.append("socialMedia.twitter", formData.socialMedia.twitter || "");
+        payload.append("socialMedia.linkedin", formData.socialMedia.linkedin || "");
+
+      }
+
+      await apiService.updateTestimonial(editingTestimonial.id, payload);
+      fetchTestimonials();
+      setIsEditModalOpen(false);
+      setLoading(false)
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update testimonial");
+      setLoading(false)
+    }
+  };
+
+
+  const handleTogglePublish = async (id: string, newStatus: boolean) => {
+
+
+    try {
+      // Optimistically update UI
+      setTestimonials((prevTestimonials) =>
+        prevTestimonials.map((t) =>
+          t.id === id ? { ...t, isPublished: newStatus } : t
+        )
+      );
+
+      // Call appropriate API
+      if (newStatus) {
+        await apiService.publishTestimonial(id);
+        fetchTestimonials();
+      } else {
+        await apiService.unpublishTestimonial(id);
+        fetchTestimonials();
+      }
+    } catch (err) {
+      console.error("Error toggling publish:", err);
+
+      // Revert if failed
+      setTestimonials((prevTestimonials) =>
+        prevTestimonials.map((t) =>
+          t.id === id ? { ...t, isPublished: !newStatus } : t
+        )
+      );
+    }
+  };
 
   return (
     <Layout>
@@ -367,6 +381,11 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
                           <CardTitle className="text-lg">{testimonial.name}</CardTitle>
                           {testimonial.featured && <Badge variant="secondary">Featured</Badge>}
                           {testimonial.hasVideo && <Badge variant="outline">Video</Badge>}
+                          {testimonial.state && (
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-none">
+                              {CATEGORY_LABELS[testimonial.state] || testimonial.state}
+                            </Badge>
+                          )}
                         </div>
                         <CardDescription className="mb-2">{testimonial.title}</CardDescription>
                         <div className="flex items-center gap-2">
@@ -377,12 +396,12 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
                     </div>
 
                     <div className="flex gap-1 items-center">
-                    <Switch
-                    checked={Boolean(testimonial.isPublished)}
-                    onCheckedChange={(checked) =>
-                      handleTogglePublish(testimonial.id, checked)
-                    }
-                  />  
+                      <Switch
+                        checked={Boolean(testimonial.isPublished)}
+                        onCheckedChange={(checked) =>
+                          handleTogglePublish(testimonial.id, checked)
+                        }
+                      />
                       <Button size="sm" variant="outline" onClick={() => handleEditTestimonial(testimonial)}>
                         <Edit className="h-3 w-3" />
                       </Button>
@@ -454,416 +473,452 @@ const handleTogglePublish = async (id: string, newStatus: boolean) => {
 
       {/* Add & Edit modals remain the same as your code, just now handleSubmitAdd & handleSubmitEdit include profileImage */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
- <DialogContent className="max-w-3xl w-full max-h-[80vh] sm:h-auto overflow-y-auto rounded-xl p-6">
-   <DialogHeader>
-     <DialogTitle className="text-2xl">Add New Testimonial</DialogTitle>
-   </DialogHeader>
+        <DialogContent className="max-w-3xl w-full max-h-[80vh] sm:h-auto overflow-y-auto rounded-xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Add New Testimonial</DialogTitle>
+          </DialogHeader>
 
-   <form onSubmit={handleSubmitAdd} className="space-y-6">
-     {/* Profile Image Upload */}
-     <div className="flex justify-center">
-      <div className="relative w-32 h-32">
-    <input
-      type="file"
-      accept="image/*"
-      id="profileImageAdd"
-      className="hidden"
-      onChange={(e) => {
-        const file = e.target.files?.[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = () => {
-            setTempImageSrc(reader.result as string);
-            setCropModalOpen(true);
-          };
-          reader.readAsDataURL(file);
-        }
-      }}
-      // onChange={(e) => {
-      //   const file = e.target.files?.[0] || null;
-      //   if (file) {
-      //     setFormData({ ...formData, profileImage: file });
-      //   } else {
-      //     setFormData({ ...formData, profileImage: null });
-      //   }
-      // }}
-    />
-    <label
-      htmlFor="profileImageAdd"
-      className="cursor-pointer w-32 h-32 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden bg-gray-100 hover:border-gray-400 relative"
-    >
-      {formData.profileImage ? (
-        <img
-          src={
-            typeof formData.profileImage === "string"
-              ? formData.profileImage
-              : URL.createObjectURL(formData.profileImage)
-          }
-          alt="Profile"
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <User className="w-12 h-12 text-gray-400" />
-      )}
-      {/* <span className="absolute bottom-1 right-1 bg-primary text-white text-xs px-2 py-1 rounded-full">
+          <form onSubmit={handleSubmitAdd} className="space-y-6">
+            {/* Profile Image Upload */}
+            <div className="flex justify-center">
+              <div className="relative w-32 h-32">
+                <input
+                  type="file"
+                  accept="image/*"
+                  id="profileImageAdd"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        setTempImageSrc(reader.result as string);
+                        setCropModalOpen(true);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                // onChange={(e) => {
+                //   const file = e.target.files?.[0] || null;
+                //   if (file) {
+                //     setFormData({ ...formData, profileImage: file });
+                //   } else {
+                //     setFormData({ ...formData, profileImage: null });
+                //   }
+                // }}
+                />
+                <label
+                  htmlFor="profileImageAdd"
+                  className="cursor-pointer w-32 h-32 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden bg-gray-100 hover:border-gray-400 relative"
+                >
+                  {formData.profileImage ? (
+                    <img
+                      src={
+                        typeof formData.profileImage === "string"
+                          ? formData.profileImage
+                          : URL.createObjectURL(formData.profileImage)
+                      }
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-12 h-12 text-gray-400" />
+                  )}
+                  {/* <span className="absolute bottom-1 right-1 bg-primary text-white text-xs px-2 py-1 rounded-full">
         Edit
       </span> */}
-    </label>
-  </div>
-     </div>
+                </label>
+              </div>
+            </div>
 
-     {/* Name & Email */}
-     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-       <div className="grid gap-2">
-         <Label htmlFor="name">Name *</Label>
-         <Input
-           id="name"
-           value={formData.name}
-           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-           placeholder="Enter name"
-         />
-       </div>
-       <div className="grid gap-2">
-         <Label htmlFor="email">Email *</Label>
-         <Input
-           id="email"
-           value={formData.email || ""}
-           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-           placeholder="Enter email"
-         />
-       </div>
-     </div>
+            {/* Name & Email */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Enter name"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  value={formData.email || ""}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="Enter email"
+                />
+              </div>
+            </div>
 
-     {/* Designation & Company */}
-     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-       <div className="grid gap-2">
-         <Label htmlFor="designation">Designation *</Label>
-         <Input
-           id="designation"
-           value={formData.title}
-           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-           placeholder="Enter designation"
-         />
-       </div>
-       <div className="grid gap-2">
-         <Label htmlFor="company">Company *</Label>
-         <Input
-           id="company"
-           value={formData.company}
-           onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-           placeholder="Enter company"
-         />
-       </div>
-     </div>
+            {/* Designation & Company */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="designation">Designation *</Label>
+                <Input
+                  id="designation"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Enter designation"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="company">Company *</Label>
+                <Input
+                  id="company"
+                  value={formData.company}
+                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                  placeholder="Enter company"
+                />
+              </div>
+            </div>
 
-     {/* Rating */}
-     <div className="grid gap-2">
-       <Label htmlFor="rating">Rating</Label>
-       <Select
-         value={formData.rating.toString()}
-         onValueChange={(value) => setFormData({ ...formData, rating: parseInt(value) })}
-       >
-         <SelectTrigger>
-           <SelectValue placeholder="Select rating" />
-         </SelectTrigger>
-         <SelectContent>
-           <SelectItem value="5">⭐⭐⭐⭐⭐ (5 Stars)</SelectItem>
-           <SelectItem value="4">⭐⭐⭐⭐ (4 Stars)</SelectItem>
-           <SelectItem value="3">⭐⭐⭐ (3 Stars)</SelectItem>
-           <SelectItem value="2">⭐⭐ (2 Stars)</SelectItem>
-           <SelectItem value="1">⭐ (1 Star)</SelectItem>
-         </SelectContent>
-       </Select>
-     </div>
+            {/* State */}
+            <div className="grid gap-2">
+              <Label htmlFor="state">Category*</Label>
+              <Select
+                value={formData.state}
+                onValueChange={(value) => setFormData({ ...formData, state: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nift_india">NIFT India</SelectItem>
+                  <SelectItem value="study_fashion_abroad">Study Fashion Abroad</SelectItem>
+                  <SelectItem value="certification_course">Certification Course</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-     {/* Message */}
-     <div className="grid gap-2">
-       <Label htmlFor="message">Message *</Label>
-       <Textarea
-         id="message"
-         value={formData.content}
-         onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-         placeholder="Enter testimonial message"
-         rows={5}
-       />
-     </div>
+            {/* Rating */}
+            <div className="grid gap-2">
+              <Label htmlFor="rating">Rating</Label>
+              <Select
+                value={formData.rating.toString()}
+                onValueChange={(value) => setFormData({ ...formData, rating: parseInt(value) })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select rating" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">⭐⭐⭐⭐⭐ (5 Stars)</SelectItem>
+                  <SelectItem value="4">⭐⭐⭐⭐ (4 Stars)</SelectItem>
+                  <SelectItem value="3">⭐⭐⭐ (3 Stars)</SelectItem>
+                  <SelectItem value="2">⭐⭐ (2 Stars)</SelectItem>
+                  <SelectItem value="1">⭐ (1 Star)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-     {/* Social Media */}
-     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-       <div className="grid gap-2">
-         <Label htmlFor="facebook">Facebook</Label>
-         <Input
-           id="facebook"
-           value={formData.socialMedia?.facebook || ""}
-           onChange={(e) =>
-             setFormData({
-               ...formData,
-               socialMedia: { ...formData.socialMedia, facebook: e.target.value },
-             })
-           }
-           placeholder="Facebook URL"
-         />
-       </div>
-       <div className="grid gap-2">
-         <Label htmlFor="instagram">Instagram</Label>
-         <Input
-           id="instagram"
-           value={formData.socialMedia?.instagram || ""}
-           onChange={(e) =>
-             setFormData({
-               ...formData,
-               socialMedia: { ...formData.socialMedia, instagram: e.target.value },
-             })
-           }
-           placeholder="Instagram URL"
-         />
-       </div>
-       <div className="grid gap-2">
-         <Label htmlFor="twitter">Twitter</Label>
-         <Input
-           id="twitter"
-           value={formData.socialMedia?.twitter || ""}
-           onChange={(e) =>
-             setFormData({
-               ...formData,
-               socialMedia: { ...formData.socialMedia, twitter: e.target.value },
-             })
-           }
-           placeholder="Twitter URL"
-         />
-       </div>
-       <div className="grid gap-2">
-         <Label htmlFor="linkedin">LinkedIn</Label>
-         <Input
-           id="linkedin"
-           value={formData.socialMedia?.linkedin || ""}
-           onChange={(e) =>
-             setFormData({
-               ...formData,
-               socialMedia: { ...formData.socialMedia, linkedin: e.target.value },
-             })
-           }
-           placeholder="LinkedIn URL"
-         />
-       </div>
-     </div>
+            {/* Message */}
+            <div className="grid gap-2">
+              <Label htmlFor="message">Message *</Label>
+              <Textarea
+                id="message"
+                value={formData.content}
+                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                placeholder="Enter testimonial message"
+                rows={5}
+              />
+            </div>
 
-     <DialogFooter className="flex justify-end gap-2">
-       <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
-         Cancel
-       </Button>
-       <Button type="submit">{loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Add Testimonial</Button>
-     </DialogFooter>
-   </form>
- </DialogContent>
-</Dialog>
+            {/* Social Media */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="facebook">Facebook</Label>
+                <Input
+                  id="facebook"
+                  value={formData.socialMedia?.facebook || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      socialMedia: { ...formData.socialMedia, facebook: e.target.value },
+                    })
+                  }
+                  placeholder="Facebook URL"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="instagram">Instagram</Label>
+                <Input
+                  id="instagram"
+                  value={formData.socialMedia?.instagram || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      socialMedia: { ...formData.socialMedia, instagram: e.target.value },
+                    })
+                  }
+                  placeholder="Instagram URL"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="twitter">Twitter</Label>
+                <Input
+                  id="twitter"
+                  value={formData.socialMedia?.twitter || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      socialMedia: { ...formData.socialMedia, twitter: e.target.value },
+                    })
+                  }
+                  placeholder="Twitter URL"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="linkedin">LinkedIn</Label>
+                <Input
+                  id="linkedin"
+                  value={formData.socialMedia?.linkedin || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      socialMedia: { ...formData.socialMedia, linkedin: e.target.value },
+                    })
+                  }
+                  placeholder="LinkedIn URL"
+                />
+              </div>
+            </div>
 
-{/* Edit Testimonial Modal */}
-{/* Edit Testimonial Modal */}
-<Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
- <DialogContent className="max-w-3xl w-full max-h-[80vh] sm:h-auto overflow-y-auto rounded-xl p-6">
-   <DialogHeader>
-     <DialogTitle className="text-2xl">Edit Testimonial</DialogTitle>
-   </DialogHeader>
+            <DialogFooter className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">{loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Add Testimonial</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-   <form onSubmit={handleSubmitEdit} className="space-y-6">
-     {/* Profile Image Upload */}
-     <div className="flex justify-center">
-       <div className="relative w-32 h-32">
-         <input
-           type="file"
-           accept="image/*"
-           id="profileImageEdit"
-           className="hidden"
-           onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) {
-              const reader = new FileReader();
-              reader.onload = () => {
-                setTempImageSrc(reader.result as string);
-                setCropModalOpen(true);
-              };
-              reader.readAsDataURL(file);
-            }
-          }}
-         />
-         <label
-           htmlFor="profileImageEdit"
-           className="cursor-pointer w-32 h-32 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden bg-gray-100 hover:border-gray-400"
-         >
-           {formData.profileImage ? (
-             <img
-              src={
-            typeof formData.profileImage === "string"
-              ? formData.profileImage
-              : URL.createObjectURL(formData.profileImage)
-          }
-               alt="Profile"
-               className="w-full h-full object-cover"
-             />
-           ) : (
-             <User className="w-12 h-12 text-gray-400" />
-           )}
-           <span className="absolute bottom-1 right-1 bg-primary text-white text-xs px-2 py-1 rounded-full">
-             Edit
-           </span>
-         </label>
-       </div>
-     </div>
+      {/* Edit Testimonial Modal */}
+      {/* Edit Testimonial Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-3xl w-full max-h-[80vh] sm:h-auto overflow-y-auto rounded-xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Edit Testimonial</DialogTitle>
+          </DialogHeader>
 
-     {/* Name & Email */}
-     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-       <div className="grid gap-2">
-         <Label htmlFor="edit-name">Name *</Label>
-         <Input
-           id="edit-name"
-           value={formData.name}
-           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-           placeholder="Enter name"
-         />
-       </div>
-       <div className="grid gap-2">
-         <Label htmlFor="edit-email">Email *</Label>
-         <Input
-           id="edit-email"
-           value={formData.email || ""}
-           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-           placeholder="Enter email"
-         />
-       </div>
-     </div>
+          <form onSubmit={handleSubmitEdit} className="space-y-6">
+            {/* Profile Image Upload */}
+            <div className="flex justify-center">
+              <div className="relative w-32 h-32">
+                <input
+                  type="file"
+                  accept="image/*"
+                  id="profileImageEdit"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        setTempImageSrc(reader.result as string);
+                        setCropModalOpen(true);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+                <label
+                  htmlFor="profileImageEdit"
+                  className="cursor-pointer w-32 h-32 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden bg-gray-100 hover:border-gray-400"
+                >
+                  {formData.profileImage ? (
+                    <img
+                      src={
+                        typeof formData.profileImage === "string"
+                          ? formData.profileImage
+                          : URL.createObjectURL(formData.profileImage)
+                      }
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-12 h-12 text-gray-400" />
+                  )}
+                  <span className="absolute bottom-1 right-1 bg-primary text-white text-xs px-2 py-1 rounded-full">
+                    Edit
+                  </span>
+                </label>
+              </div>
+            </div>
 
-     {/* Designation & Company */}
-     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-       <div className="grid gap-2">
-         <Label htmlFor="edit-designation">Designation *</Label>
-         <Input
-           id="edit-designation"
-           value={formData.title}
-           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-           placeholder="Enter designation"
-         />
-       </div>
-       <div className="grid gap-2">
-         <Label htmlFor="edit-company">Company *</Label>
-         <Input
-           id="edit-company"
-           value={formData.company}
-           onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-           placeholder="Enter company"
-         />
-       </div>
-     </div>
+            {/* Name & Email */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-name">Name *</Label>
+                <Input
+                  id="edit-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Enter name"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-email">Email *</Label>
+                <Input
+                  id="edit-email"
+                  value={formData.email || ""}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="Enter email"
+                />
+              </div>
+            </div>
 
-     {/* Rating */}
-     <div className="grid gap-2">
-       <Label htmlFor="edit-rating">Rating</Label>
-       <Select
-         value={formData.rating.toString()}
-         onValueChange={(value) => setFormData({ ...formData, rating: parseInt(value) })}
-       >
-         <SelectTrigger>
-           <SelectValue placeholder="Select rating" />
-         </SelectTrigger>
-         <SelectContent>
-           <SelectItem value="5">⭐⭐⭐⭐⭐ (5 Stars)</SelectItem>
-           <SelectItem value="4">⭐⭐⭐⭐ (4 Stars)</SelectItem>
-           <SelectItem value="3">⭐⭐⭐ (3 Stars)</SelectItem>
-           <SelectItem value="2">⭐⭐ (2 Stars)</SelectItem>
-           <SelectItem value="1">⭐ (1 Star)</SelectItem>
-         </SelectContent>
-       </Select>
-     </div>
+            {/* Designation & Company */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-designation">Designation *</Label>
+                <Input
+                  id="edit-designation"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Enter designation"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-company">Company *</Label>
+                <Input
+                  id="edit-company"
+                  value={formData.company}
+                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                  placeholder="Enter company"
+                />
+              </div>
+            </div>
 
-     {/* Message */}
-     <div className="grid gap-2">
-       <Label htmlFor="edit-message">Message *</Label>
-       <Textarea
-         id="edit-message"
-         value={formData.content}
-         onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-         placeholder="Enter testimonial message"
-         rows={5}
-       />
-     </div>
+            {/* State */}
+            <div className="grid gap-2">
+              <Label htmlFor="edit-state">Category *</Label>
+              <Select
+                value={formData.state}
+                onValueChange={(value) => setFormData({ ...formData, state: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nift_india">NIFT India</SelectItem>
+                  <SelectItem value="study_fashion_abroad">Study Fashion Abroad</SelectItem>
+                  <SelectItem value="certification_course">Certification Course</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-     {/* Social Media */}
-     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-       <div className="grid gap-2">
-         <Label htmlFor="edit-facebook">Facebook</Label>
-         <Input
-           id="edit-facebook"
-           value={formData.socialMedia?.facebook || ""}
-           onChange={(e) =>
-             setFormData({
-               ...formData,
-               socialMedia: { ...formData.socialMedia, facebook: e.target.value },
-             })
-           }
-           placeholder="Facebook URL"
-         />
-       </div>
-       <div className="grid gap-2">
-         <Label htmlFor="edit-instagram">Instagram</Label>
-         <Input
-           id="edit-instagram"
-           value={formData.socialMedia?.instagram || ""}
-           onChange={(e) =>
-             setFormData({
-               ...formData,
-               socialMedia: { ...formData.socialMedia, instagram: e.target.value },
-             })
-           }
-           placeholder="Instagram URL"
-         />
-       </div>
-       <div className="grid gap-2">
-         <Label htmlFor="edit-twitter">Twitter</Label>
-         <Input
-           id="edit-twitter"
-           value={formData.socialMedia?.twitter || ""}
-           onChange={(e) =>
-             setFormData({
-               ...formData,
-               socialMedia: { ...formData.socialMedia, twitter: e.target.value },
-             })
-           }
-           placeholder="Twitter URL"
-         />
-       </div>
-       <div className="grid gap-2">
-         <Label htmlFor="edit-linkedin">LinkedIn</Label>
-         <Input
-           id="edit-linkedin"
-           value={formData.socialMedia?.linkedin || ""}
-           onChange={(e) =>
-             setFormData({
-               ...formData,
-               socialMedia: { ...formData.socialMedia, linkedin: e.target.value },
-             })
-           }
-           placeholder="LinkedIn URL"
-         />
-       </div>
-     </div>
+            {/* Rating */}
+            <div className="grid gap-2">
+              <Label htmlFor="edit-rating">Rating</Label>
+              <Select
+                value={formData.rating.toString()}
+                onValueChange={(value) => setFormData({ ...formData, rating: parseInt(value) })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select rating" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">⭐⭐⭐⭐⭐ (5 Stars)</SelectItem>
+                  <SelectItem value="4">⭐⭐⭐⭐ (4 Stars)</SelectItem>
+                  <SelectItem value="3">⭐⭐⭐ (3 Stars)</SelectItem>
+                  <SelectItem value="2">⭐⭐ (2 Stars)</SelectItem>
+                  <SelectItem value="1">⭐ (1 Star)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-     <DialogFooter className="flex justify-end gap-2">
-       <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
-         Cancel
-       </Button>
-       <Button type="submit">{loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Update Testimonial</Button>
-     </DialogFooter>
-   </form>
- </DialogContent>
-</Dialog>
-<ImageCropModal
-  imageSrc={tempImageSrc}
-  open={cropModalOpen}
-  onClose={() => setCropModalOpen(false)}
-  onCropComplete={(croppedFile) => {
-    setFormData({ ...formData, profileImage: croppedFile });
-  }}
-/>
+            {/* Message */}
+            <div className="grid gap-2">
+              <Label htmlFor="edit-message">Message *</Label>
+              <Textarea
+                id="edit-message"
+                value={formData.content}
+                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                placeholder="Enter testimonial message"
+                rows={5}
+              />
+            </div>
+
+            {/* Social Media */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-facebook">Facebook</Label>
+                <Input
+                  id="edit-facebook"
+                  value={formData.socialMedia?.facebook || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      socialMedia: { ...formData.socialMedia, facebook: e.target.value },
+                    })
+                  }
+                  placeholder="Facebook URL"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-instagram">Instagram</Label>
+                <Input
+                  id="edit-instagram"
+                  value={formData.socialMedia?.instagram || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      socialMedia: { ...formData.socialMedia, instagram: e.target.value },
+                    })
+                  }
+                  placeholder="Instagram URL"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-twitter">Twitter</Label>
+                <Input
+                  id="edit-twitter"
+                  value={formData.socialMedia?.twitter || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      socialMedia: { ...formData.socialMedia, twitter: e.target.value },
+                    })
+                  }
+                  placeholder="Twitter URL"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-linkedin">LinkedIn</Label>
+                <Input
+                  id="edit-linkedin"
+                  value={formData.socialMedia?.linkedin || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      socialMedia: { ...formData.socialMedia, linkedin: e.target.value },
+                    })
+                  }
+                  placeholder="LinkedIn URL"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">{loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Update Testimonial</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      <ImageCropModal
+        imageSrc={tempImageSrc}
+        open={cropModalOpen}
+        onClose={() => setCropModalOpen(false)}
+        onCropComplete={(croppedFile) => {
+          setFormData({ ...formData, profileImage: croppedFile });
+        }}
+      />
     </Layout>
   );
 }

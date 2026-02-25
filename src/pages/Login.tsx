@@ -128,16 +128,16 @@ const Login = () => {
       <div className="flex w-full max-w-5xl bg-white shadow-2xl rounded-2xl overflow-hidden">
         {/* Left Section - Illustration / Branding */}
         <div className="hidden md:flex w-1/2 bg-gradient-to-br from-blue-600 to-purple-600 text-white flex-col justify-center items-center p-10">
-        <img
+          <img
             src={logo}
             alt="login illustration"
-            className="w-1/4 mt-8 animate-float"
+            className="w-1/4 mt-8 animate-float rounded-full aspect-square object-cover"
           />
           <h1 className="text-4xl font-bold mb-4">Welcome Back!</h1>
           <p className="text-center text-lg opacity-90">
             Manage your platform securely and efficiently.
           </p>
-        
+
         </div>
 
         {/* Right Section - Login Form */}
@@ -198,7 +198,7 @@ const Login = () => {
                     {isLoading ? "Signing in..." : "Login"}
                   </Button>
                 </div>
-{/* 
+                {/* 
                 <p className="text-sm text-center mt-3">
                   <button
                     type="button"

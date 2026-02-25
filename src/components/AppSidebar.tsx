@@ -64,7 +64,7 @@ export function AppSidebar() {
       <div className="flex h-12 items-center justify-between px-5 border-b border-gray-200 shrink-0">
         {!collapsed && (
           <h1 className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text flex items-center gap-2">
-            <img src={logo} alt="logo" className="w-1/5" /> Whydesigns
+            <img src={logo} alt="logo" className="w-1/5 rounded-full aspect-square object-cover" /> Whydesigns
           </h1>
         )}
         <Button

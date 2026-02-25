@@ -132,12 +132,12 @@ export default function PDFs() {
   }, [searchTerm, selectedCategory, selectedStatus]); // Refetch when these change
 
   const handlePageChange = (newPage: number) => {
-      setCurrentPage(newPage); // Update current page
+    setCurrentPage(newPage); // Update current page
   };
 
   useEffect(() => {
     fetchPDFs(currentPage);
-  },[currentPage])
+  }, [currentPage])
 
   // Handler functions
   const handleAddPDF = () => {
@@ -213,7 +213,7 @@ export default function PDFs() {
 
     try {
       setFormLoading(true);
-      
+
       const submitData = new FormData();
       submitData.append('name', formData.name);
       submitData.append('description', formData.description);
@@ -222,7 +222,7 @@ export default function PDFs() {
       submitData.append('file', formData.file);
 
       const response = await apiService.createMaterial(submitData);
-      
+
       if (response.success) {
         toast({
           title: "Success",
@@ -263,7 +263,7 @@ export default function PDFs() {
 
     try {
       setFormLoading(true);
-      
+
       const updateData = {
         name: formData.name,
         description: formData.description,
@@ -271,18 +271,18 @@ export default function PDFs() {
         tags: formData.tags,
         file: formData.file
       };
-// console.log("updateData",updateData)
-const updateData1 = new FormData();
-updateData1.append('name', formData.name);
-updateData1.append('description', formData.description);
-updateData1.append('category', formData.category);
-updateData1.append('tags', JSON.stringify(formData.tags));
-updateData1.append('file', formData.file);
+      // console.log("updateData",updateData)
+      const updateData1 = new FormData();
+      updateData1.append('name', formData.name);
+      updateData1.append('description', formData.description);
+      updateData1.append('category', formData.category);
+      updateData1.append('tags', JSON.stringify(formData.tags));
+      updateData1.append('file', formData.file);
 
 
 
       const response = await apiService.updateMaterial(editingPDF.id, updateData1);
-      
+
       if (response.success) {
         toast({
           title: "Success",
@@ -345,7 +345,7 @@ updateData1.append('file', formData.file);
   }
 
   const handleTogglePDF = async (id: string, currentStatus: boolean) => {
-  
+
     try {
       // Optimistically update UI
       setPdfs((prevPDFs) =>
@@ -353,7 +353,7 @@ updateData1.append('file', formData.file);
           p.id === id ? { ...p, isPublished: currentStatus } : p
         )
       );
-  
+
       // Call appropriate API
       if (currentStatus) {
         await apiService.unpublishPdf(id);
@@ -364,7 +364,7 @@ updateData1.append('file', formData.file);
       }
     } catch (err) {
       console.error("Error toggling publish:", err);
-  
+
       // Revert if failed
       setPdfs((prevPDFs) =>
         prevPDFs.map((p) =>
@@ -377,9 +377,9 @@ updateData1.append('file', formData.file);
   function formatCareerGuide(str) {
     // Remove underscores and capitalize first letter
     return str
-        .replace(/_/g, ' ')
-        .replace(/^\w/, firstChar => firstChar.toUpperCase());
-}
+      .replace(/_/g, ' ')
+      .replace(/^\w/, firstChar => firstChar.toUpperCase());
+  }
   return (
     <Layout>
       <div className="p-6 space-y-6">
@@ -431,8 +431,8 @@ updateData1.append('file', formData.file);
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                      <SelectItem value="career_guide">Career Guide</SelectItem>
-                <SelectItem value="study_abroad">Study Abroad</SelectItem>
+                        <SelectItem value="career_guide">Career Guide</SelectItem>
+                        <SelectItem value="study_abroad">Study Abroad</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -445,16 +445,16 @@ updateData1.append('file', formData.file);
                       onChange={handleFileChange}
                     />
                   </div>
-                  <div className="grid gap-2">
+                  {/* <div className="grid gap-2">
                     <Label htmlFor="tags">Tags (comma separated)</Label>
                     <Input
                       id="tags"
-                      
+
                       value={formData?.tags?.join(", ")}
                       onChange={(e) => setFormData({ ...formData, tags: e.target.value.split(", ").filter(tag => tag) })}
                       placeholder="Enter tags separated by commas"
                     />
-                  </div>
+                  </div> */}
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
@@ -492,7 +492,7 @@ updateData1.append('file', formData.file);
          
               </SelectContent>
             </Select> */}
-             {/* <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            {/* <Select value={selectedStatus} onValueChange={setSelectedStatus}>
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
@@ -502,12 +502,12 @@ updateData1.append('file', formData.file);
               <SelectItem value="inactive">Inactive</SelectItem>
             </SelectContent>
           </Select> */}
+          </div>
         </div>
-      </div>
 
         {/* PDFs Table */}
         <Card>
-        
+
           <CardContent>
             <Table>
               <TableHeader>
@@ -525,68 +525,67 @@ updateData1.append('file', formData.file);
               </TableHeader>
               <TableBody>
                 {pdfs.map((pdf) => (
-                    <TableRow key={pdf.id}>
-                      <TableCell className="font-medium">{pdf.name}</TableCell>
-                      <TableCell className="max-w-xs truncate">{pdf.description}</TableCell>
-                      <TableCell>{formatCareerGuide(pdf.category)}</TableCell>
-                      <TableCell>{formatFileSize(pdf.fileSize)}</TableCell>
-                      <TableCell>{pdf.downloadCount}</TableCell>
-                      <TableCell>{pdf.uploadedBy.name}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          pdf.isPublished
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
+                  <TableRow key={pdf.id}>
+                    <TableCell className="font-medium">{pdf.name}</TableCell>
+                    <TableCell className="max-w-xs truncate">{pdf.description}</TableCell>
+                    <TableCell>{formatCareerGuide(pdf.category)}</TableCell>
+                    <TableCell>{formatFileSize(pdf.fileSize)}</TableCell>
+                    <TableCell>{pdf.downloadCount}</TableCell>
+                    <TableCell>{pdf.uploadedBy.name}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs ${pdf.isPublished
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
                         }`}>
-                          {pdf.isPublished ? "Published" : "Unpublished"}
-                        </span>
-                      </TableCell>
-                      <TableCell>{new Date(pdf.createdAt).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2 items-center">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => window.open(pdf.fileUrl, '_blank')}
-                            title="View PDF"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEditPDF(pdf)}
-                            title="Edit PDF"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                       
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={ ()=>{
-                              if(pdf.isPublished){
-                                showToast("You can’t delete active or published items. Please make it inactive first.", "warning");
-                                return;
-                              }else{
-                                handleDeletePDF(pdf.id)
-                              }
+                        {pdf.isPublished ? "Published" : "Unpublished"}
+                      </span>
+                    </TableCell>
+                    <TableCell>{new Date(pdf.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2 items-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => window.open(pdf.fileUrl, '_blank')}
+                          title="View PDF"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditPDF(pdf)}
+                          title="Edit PDF"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            if (pdf.isPublished) {
+                              showToast("You can’t delete active or published items. Please make it inactive first.", "warning");
+                              return;
+                            } else {
+                              handleDeletePDF(pdf.id)
                             }
-                              
-                              }
-                            title="Delete PDF"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                             <Switch
-                            checked={pdf.isPublished  }
-                             onCheckedChange={(checked) => handleTogglePDF(pdf.id, pdf.isPublished)}
-                            title={pdf.isPublished ? "Deactivate PDF" : "Activate PDF"}
-                          />
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                          }
+
+                          }
+                          title="Delete PDF"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <Switch
+                          checked={pdf.isPublished}
+                          onCheckedChange={(checked) => handleTogglePDF(pdf.id, pdf.isPublished)}
+                          title={pdf.isPublished ? "Deactivate PDF" : "Activate PDF"}
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
 
@@ -655,8 +654,8 @@ updateData1.append('file', formData.file);
                     </SelectTrigger>
                     <SelectContent>
                       {/* <SelectItem value="all">All</SelectItem> */}
-                    <SelectItem value="career_guide">Career Guide</SelectItem>
-                    <SelectItem value="study_abroad">Study Abroad</SelectItem>
+                      <SelectItem value="career_guide">Career Guide</SelectItem>
+                      <SelectItem value="study_abroad">Study Abroad</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -672,16 +671,16 @@ updateData1.append('file', formData.file);
                     Leave empty to keep the current PDF file
                   </p>
                 </div>
-                <div className="grid gap-2">
+                {/* <div className="grid gap-2">
                   <Label htmlFor="edit-tags">Tags (comma separated)</Label>
                   <Input
                     id="edit-tags"
                     disabled
-                    value={formData.tags.join(", ")}
+                    value={formData?.tags?.join(", ")}
                     onChange={(e) => setFormData({ ...formData, tags: e.target.value.split(", ").filter(tag => tag) })}
                     placeholder="Enter tags separated by commas"
                   />
-                </div>
+                </div> */}
               </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
@@ -695,27 +694,27 @@ updateData1.append('file', formData.file);
             </form>
           </DialogContent>
         </Dialog>
-         {/* Delete Confirmation Modal */}
-         <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle>Delete Confirmation</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this PDF? This action cannot be
-              undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={cancelDeletePDF}>
-              Cancel
-            </Button>
-            <Button type="button" variant="destructive" onClick={confirmDeletePDF}>
-              {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        {/* Delete Confirmation Modal */}
+        <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+          <DialogContent className="sm:max-w-[400px]">
+            <DialogHeader>
+              <DialogTitle>Delete Confirmation</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this PDF? This action cannot be
+                undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={cancelDeletePDF}>
+                Cancel
+              </Button>
+              <Button type="button" variant="destructive" onClick={confirmDeletePDF}>
+                {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
